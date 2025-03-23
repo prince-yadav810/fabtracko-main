@@ -2,140 +2,149 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
+ 
 @layer base {
   :root {
-    --background: 210 40% 98%;
+    --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
 
     --card: 0 0% 100%;
     --card-foreground: 222.2 84% 4.9%;
-
+ 
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
-
-    --primary: 221.2 83% 53.3%;
+ 
+    --primary: 221.2 83.2% 53.3%;
     --primary-foreground: 210 40% 98%;
-
+ 
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;
-
+ 
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
-
+ 
     --accent: 210 40% 96.1%;
     --accent-foreground: 222.2 47.4% 11.2%;
-
+ 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83% 53.3%;
-
-    --radius: 0.8rem;
+    --ring: 221.2 83.2% 53.3%;
+ 
+    --radius: 0.5rem;
+    
+    --status-present: 120 59.3% 59.6%;
+    --status-absent: 0 84.2% 55.9%;
+    --status-halfday: 47.9 95.2% 53.3%;
+    --status-overtime: 261.1 72.5% 59.4%;
+  }
+ 
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+ 
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+ 
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+ 
+    --primary: 217.2 91.2% 59.8%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+ 
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+ 
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+ 
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+ 
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+ 
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 224.3 76.3% 48%;
   }
 }
-
+ 
 @layer base {
   * {
     @apply border-border;
   }
-
   body {
-    @apply bg-background text-foreground font-sans antialiased min-h-screen;
+    @apply bg-background text-foreground;
   }
 }
 
-@layer components {
-  .glass-panel {
-    @apply bg-white/75 backdrop-blur-md border border-white/20 shadow-glass;
-  }
-  
-  .tile {
-    @apply bg-white rounded-xl shadow-card hover:shadow-elevated transition-all duration-300 p-6 flex flex-col animate-scale-in;
-  }
-  
-  .tile-icon {
-    @apply h-12 w-12 mb-4 text-primary;
-  }
-  
-  .status-chip {
-    @apply px-3 py-1 rounded-full text-xs font-medium;
-  }
-  
-  .page-container {
-    @apply max-w-5xl mx-auto px-4 py-4 sm:px-6 sm:py-6 space-y-6 animate-fade-in;
-  }
-  
-  .page-title {
-    @apply text-2xl font-semibold tracking-tight;
-  }
-  
-  .section-title {
-    @apply text-lg font-medium text-gray-900 mb-4;
-  }
-}
-
-/* Smooth scrolling for the entire app */
-html {
-  scroll-behavior: smooth;
-}
-
-/* Custom loader animation */
-.loader {
-  width: 24px;
-  height: 24px;
-  border: 3px solid #f3f3f3;
-  border-top: 3px solid hsl(var(--primary));
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-/* Status colors */
-.status-present {
-  @apply bg-status-present/20 text-status-present border border-status-present/30;
-}
-
-.status-absent {
-  @apply bg-status-absent/20 text-status-absent border border-status-absent/30;
-}
-
-.status-halfday {
-  @apply bg-status-halfday/20 text-status-halfday border border-status-halfday/30;
-}
-
-.status-overtime {
-  @apply bg-status-overtime/20 text-status-overtime border border-status-overtime/30;
-}
-
-/* Calendar day styling */
 .calendar-day {
-  @apply w-10 h-10 rounded-full flex items-center justify-center font-medium text-sm transition-all;
+  @apply flex items-center justify-center h-8 w-8 rounded-full text-sm;
 }
 
 .calendar-day.present {
-  @apply bg-status-present text-white;
+  @apply bg-[#F2FCE2] border border-[#68B545];
 }
 
 .calendar-day.absent {
-  @apply bg-status-absent text-white;
+  @apply bg-[#ea384c]/10 border border-[#ea384c] text-[#ea384c];
 }
 
 .calendar-day.halfday {
-  @apply bg-status-halfday text-white;
+  @apply bg-[#FEF7CD] border border-[#F8DC68];
 }
 
 .calendar-day.overtime {
-  @apply bg-status-overtime text-white;
+  @apply bg-status-overtime/10 border border-status-overtime text-status-overtime;
 }
 
-/* Card hover effects */
-.hover-card {
-  @apply transition-all duration-300 hover:shadow-lg hover:-translate-y-1;
+/* Add animation for page transitions */
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Shadow for cards */
+.shadow-card {
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.1);
+}
+
+/* Print styles for reports */
+@media print {
+  .bg-background {
+    background-color: white;
+  }
+  
+  button {
+    display: none;
+  }
+  
+  header {
+    position: static;
+    box-shadow: none;
+    border: none;
+  }
+  
+  .shadow-card {
+    box-shadow: none;
+    border: 1px solid #eaeaea;
+    break-inside: avoid;
+  }
+  
+  .container {
+    max-width: 100%;
+  }
 }

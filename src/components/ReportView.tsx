@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { 
   Download, 
@@ -7,11 +6,14 @@ import {
   ArrowRight, 
   IndianRupee,
   Printer,
-  FileText
+  FileText,
+  User
 } from "lucide-react";
 import { useAppContext } from "../context/AppContext";
 import { format, addMonths, isSameMonth, startOfMonth, endOfMonth, eachDayOfInterval } from "date-fns";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
+import { Avatar, AvatarImage, AvatarFallback } from "./ui/avatar";
 
 const ReportView: React.FC = () => {
   const { 
@@ -21,6 +23,7 @@ const ReportView: React.FC = () => {
     calculateNetWages 
   } = useAppContext();
   
+  const navigate = useNavigate();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   
   // Get current month and year
@@ -102,6 +105,11 @@ const ReportView: React.FC = () => {
   
   const handlePrintReport = () => {
     window.print();
+  };
+
+  // Navigate to individual worker report
+  const handleViewWorkerReport = (workerId: string) => {
+    navigate(`/reports/${workerId}`);
   };
 
   return (
@@ -220,6 +228,7 @@ const ReportView: React.FC = () => {
                 <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground tracking-wider">Advances</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground tracking-wider">Overtime Pay</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground tracking-wider">Net Wages</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-border">
@@ -283,12 +292,21 @@ const ReportView: React.FC = () => {
                       <span>{summary.netWages}</span>
                     </div>
                   </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <button
+                      onClick={() => handleViewWorkerReport(summary.worker.id)}
+                      className="flex items-center font-medium text-primary hover:text-primary/80 transition-colors"
+                    >
+                      <User className="h-3 w-3 mr-1" />
+                      <span>View Report</span>
+                    </button>
+                  </td>
                 </tr>
               ))}
               
               {workerSummaries.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="px-6 py-8 text-center text-muted-foreground">
+                  <td colSpan={9} className="px-6 py-8 text-center text-muted-foreground">
                     No data available for the selected month
                   </td>
                 </tr>
