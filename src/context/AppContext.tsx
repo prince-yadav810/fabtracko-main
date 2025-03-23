@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 
 // Define types for our data models
@@ -31,7 +30,7 @@ interface AppContextType {
   workers: Worker[];
   attendanceRecords: AttendanceRecord[];
   payments: Payment[];
-  addWorker: (worker: Omit<Worker, "id">) => void;
+  addWorker: (worker: Omit<Worker, "id">) => string;
   updateWorker: (worker: Worker) => void;
   deleteWorker: (id: string) => void;
   markAttendance: (workerId: string, date: string, status: AttendanceStatus) => void;
@@ -58,11 +57,8 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   const [selectedWorker, setSelectedWorker] = useState<Worker | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Simulate loading data from local storage
   useEffect(() => {
-    // In a real app, you would load from local storage or a database
     const loadSampleData = () => {
-      // Set some sample data
       setWorkers([
         {
           id: "1",
@@ -87,7 +83,6 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
         },
       ]);
 
-      // Sample attendance records
       const today = new Date();
       const yesterday = new Date(today);
       yesterday.setDate(yesterday.getDate() - 1);
@@ -151,7 +146,6 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
         },
       ]);
 
-      // Sample payments
       setPayments([
         {
           id: "p1",
@@ -172,52 +166,45 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
       setIsLoading(false);
     };
 
-    // Simulate a small delay for loading
     setTimeout(loadSampleData, 1000);
   }, []);
 
-  // Add a new worker
   const addWorker = (worker: Omit<Worker, "id">) => {
+    const newWorkerId = Date.now().toString();
     const newWorker: Worker = {
       ...worker,
-      id: Date.now().toString(), // Simple ID generation
+      id: newWorkerId,
     };
     setWorkers((prev) => [...prev, newWorker]);
+    return newWorkerId;
   };
 
-  // Update an existing worker
   const updateWorker = (updatedWorker: Worker) => {
     setWorkers((prev) => 
       prev.map((worker) => (worker.id === updatedWorker.id ? updatedWorker : worker))
     );
   };
 
-  // Delete a worker
   const deleteWorker = (id: string) => {
     setWorkers((prev) => prev.filter((worker) => worker.id !== id));
-    // Also clean up related records
     setAttendanceRecords((prev) => 
       prev.filter((record) => record.workerId !== id)
     );
     setPayments((prev) => prev.filter((payment) => payment.workerId !== id));
   };
 
-  // Mark attendance for a worker
   const markAttendance = (workerId: string, date: string, status: AttendanceStatus) => {
-    // Check if there's already a record for this worker and date
     const existingRecord = attendanceRecords.find(
       (record) => record.workerId === workerId && record.date === date
     );
 
     if (existingRecord) {
-      // Update existing record
       setAttendanceRecords((prev) =>
         prev.map((record) =>
           record.id === existingRecord.id ? { ...record, status } : record
         )
       );
     } else {
-      // Add new record
       const newRecord: AttendanceRecord = {
         id: Date.now().toString(),
         workerId,
@@ -228,7 +215,6 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     }
   };
 
-  // Add a payment record
   const addPayment = (payment: Omit<Payment, "id">) => {
     const newPayment: Payment = {
       ...payment,
@@ -237,12 +223,10 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     setPayments((prev) => [...prev, newPayment]);
   };
 
-  // Delete a payment record
   const deletePayment = (id: string) => {
     setPayments((prev) => prev.filter((payment) => payment.id !== id));
   };
 
-  // Get attendance records for a worker in a specific month
   const getWorkerAttendance = (workerId: string, month: number, year: number) => {
     return attendanceRecords.filter((record) => {
       const recordDate = new Date(record.date);
@@ -254,7 +238,6 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     });
   };
 
-  // Get payment records for a worker in a specific month
   const getWorkerPayments = (workerId: string, month: number, year: number) => {
     return payments.filter((payment) => {
       const paymentDate = new Date(payment.date);
@@ -266,7 +249,6 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     });
   };
 
-  // Calculate net wages for a worker in a specific month
   const calculateNetWages = (workerId: string, month: number, year: number) => {
     const worker = workers.find((w) => w.id === workerId);
     if (!worker) return 0;
@@ -274,28 +256,23 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     const monthAttendance = getWorkerAttendance(workerId, month, year);
     const monthPayments = getWorkerPayments(workerId, month, year);
 
-    // Calculate total days present (full day = 1, half day = 0.5)
     const totalDaysPresent = monthAttendance.reduce((total, record) => {
       if (record.status === "present") return total + 1;
       if (record.status === "halfday") return total + 0.5;
-      if (record.status === "overtime") return total + 1; // Overtime also counts as present
+      if (record.status === "overtime") return total + 1;
       return total;
     }, 0);
 
-    // Calculate base wages
     const baseWages = totalDaysPresent * worker.dailyWage;
 
-    // Calculate overtime pay
     const overtimePayments = monthPayments
       .filter((payment) => payment.type === "overtime")
       .reduce((total, payment) => total + payment.amount, 0);
 
-    // Calculate advance payments
     const advancePayments = monthPayments
       .filter((payment) => payment.type === "advance")
       .reduce((total, payment) => total + payment.amount, 0);
 
-    // Net wages = base + overtime - advances
     return baseWages + overtimePayments - advancePayments;
   };
 
@@ -324,7 +301,6 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   );
 };
 
-// Custom hook to use the app context
 export const useAppContext = () => {
   const context = useContext(AppContext);
   if (context === undefined) {
