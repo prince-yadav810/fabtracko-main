@@ -1,17 +1,16 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { 
   fetchWorkers, 
   fetchAttendance, 
   fetchPayments,
-  addWorkerToFirebase,
-  updateWorkerInFirebase,
-  deleteWorkerFromFirebase,
-  markAttendanceInFirebase,
-  addPaymentToFirebase,
-  deletePaymentFromFirebase,
+  addWorkerToApi,
+  updateWorkerInApi,
+  deleteWorkerFromApi,
+  markAttendanceInApi,
+  addPaymentToApi,
+  deletePaymentFromApi,
   seedInitialData
-} from "../services/firebaseService";
+} from "../services/apiService";
 import { toast } from "../hooks/use-toast";
 
 // Define types for our data models
@@ -72,17 +71,14 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isDataSeeded, setIsDataSeeded] = useState(false);
 
-  // Load data from Firebase on component mount
   useEffect(() => {
     const loadData = async () => {
       setIsLoading(true);
       try {
-        // Fetch data from Firebase
         const loadedWorkers = await fetchWorkers();
         const loadedAttendance = await fetchAttendance();
         const loadedPayments = await fetchPayments();
 
-        // If no data exists yet, seed with sample data
         if (loadedWorkers.length === 0 && !isDataSeeded) {
           await seedSampleData();
           setIsDataSeeded(true);
@@ -226,10 +222,9 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     }
   };
 
-  // Modified functions to use Firebase
   const addWorker = async (worker: Omit<Worker, "id">): Promise<string> => {
     try {
-      const newWorkerId = await addWorkerToFirebase(worker);
+      const newWorkerId = await addWorkerToApi(worker);
       const newWorker: Worker = {
         ...worker,
         id: newWorkerId,
@@ -249,7 +244,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
 
   const updateWorker = async (updatedWorker: Worker): Promise<void> => {
     try {
-      await updateWorkerInFirebase(updatedWorker);
+      await updateWorkerInApi(updatedWorker);
       setWorkers((prev) => 
         prev.map((worker) => (worker.id === updatedWorker.id ? updatedWorker : worker))
       );
@@ -266,10 +261,8 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
 
   const deleteWorker = async (id: string): Promise<void> => {
     try {
-      await deleteWorkerFromFirebase(id);
+      await deleteWorkerFromApi(id);
       setWorkers((prev) => prev.filter((worker) => worker.id !== id));
-      // Note: We don't delete associated records from Firebase here to maintain data integrity
-      // Just update the local state
       setAttendanceRecords((prev) => 
         prev.filter((record) => record.workerId !== id)
       );
@@ -287,7 +280,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
 
   const markAttendance = async (workerId: string, date: string, status: AttendanceStatus): Promise<void> => {
     try {
-      await markAttendanceInFirebase(workerId, date, status);
+      await markAttendanceInApi(workerId, date, status);
       
       const existingRecord = attendanceRecords.find(
         (record) => record.workerId === workerId && record.date === date
@@ -300,8 +293,6 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
           )
         );
       } else {
-        // For now, we just append a new record with a temporary ID
-        // Firebase will assign a proper ID, but we update our local state for immediate UI feedback
         const tempId = Date.now().toString();
         const newRecord: AttendanceRecord = {
           id: tempId,
@@ -311,7 +302,6 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
         };
         setAttendanceRecords((prev) => [...prev, newRecord]);
         
-        // Refresh attendance records to get the actual Firebase ID
         const updatedRecords = await fetchAttendance();
         setAttendanceRecords(updatedRecords);
       }
@@ -328,7 +318,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
 
   const addPayment = async (payment: Omit<Payment, "id">): Promise<void> => {
     try {
-      const newPaymentId = await addPaymentToFirebase(payment);
+      const newPaymentId = await addPaymentToApi(payment);
       const newPayment: Payment = {
         ...payment,
         id: newPaymentId,
@@ -347,7 +337,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
 
   const deletePayment = async (id: string): Promise<void> => {
     try {
-      await deletePaymentFromFirebase(id);
+      await deletePaymentFromApi(id);
       setPayments((prev) => prev.filter((payment) => payment.id !== id));
     } catch (error) {
       console.error("Error deleting payment:", error);
@@ -360,7 +350,6 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     }
   };
 
-  // These utility functions don't need to change as they operate on the local state
   const getWorkerAttendance = (workerId: string, month: number, year: number) => {
     return attendanceRecords.filter((record) => {
       const recordDate = new Date(record.date);
