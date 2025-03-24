@@ -5,13 +5,14 @@ import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { LockKeyhole, User } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { LockKeyhole, User, Info } from "lucide-react";
 import authService from "@/services/authService";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const LoginPage = () => {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
+  const [username, setUsername] = useState("admin");
+  const [password, setPassword] = useState("changeme123");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -47,6 +48,13 @@ const LoginPage = () => {
           <CardTitle className="text-2xl font-bold">Vikas Fabrication Works</CardTitle>
         </CardHeader>
         <CardContent>
+          <Alert className="mb-4 bg-amber-50 text-amber-800 border-amber-200">
+            <Info className="h-4 w-4" />
+            <AlertDescription>
+              <strong>Temporary credentials:</strong> Username: admin | Password: changeme123
+            </AlertDescription>
+          </Alert>
+          
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="username">Username</Label>
