@@ -6,6 +6,8 @@ const dotenv = require('dotenv');
 const workerRoutes = require('./routes/workers');
 const attendanceRoutes = require('./routes/attendance');
 const paymentRoutes = require('./routes/payments');
+const authRoutes = require('./routes/auth');
+const { authenticate } = require('./middleware/auth');
 
 // Load environment variables
 dotenv.config();
@@ -23,10 +25,13 @@ mongoose.connect(process.env.MONGODB_URI)
 app.use(cors());
 app.use(express.json());
 
-// Routes
-app.use('/api/workers', workerRoutes);
-app.use('/api/attendance', attendanceRoutes);
-app.use('/api/payments', paymentRoutes);
+// Public routes
+app.use('/api/auth', authRoutes);
+
+// Protected routes
+app.use('/api/workers', authenticate, workerRoutes);
+app.use('/api/attendance', authenticate, attendanceRoutes);
+app.use('/api/payments', authenticate, paymentRoutes);
 
 // Error handling
 app.use((err, req, res, next) => {
@@ -38,4 +43,3 @@ app.use((err, req, res, next) => {
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
-
