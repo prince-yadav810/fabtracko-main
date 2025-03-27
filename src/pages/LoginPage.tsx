@@ -1,18 +1,14 @@
 
-import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { toast } from "sonner";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { LockKeyhole, User, Info } from "lucide-react";
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from "@/context/AuthContext";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { toast } from "sonner";
+import '../styles/LoginPage.css';
 
 const LoginPage = () => {
-  const [username, setUsername] = useState("vikasfabtech");
-  const [password, setPassword] = useState("passfabtech");
+  const [username, setUsername] = useState('vikasfabtech');
+  const [password, setPassword] = useState('passfabtech');
+  const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { login, isAuthenticated } = useAuth();
@@ -23,26 +19,23 @@ const LoginPage = () => {
     }
   }, [isAuthenticated, navigate]);
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    
-    if (!username || !password) {
-      toast.error("Please enter both username and password");
-      return;
-    }
-    
+    setError('');
     setIsLoading(true);
     
     try {
       console.log("Submitting login form with:", { username, passwordLength: password.length });
       await login(username, password);
       toast.success("Login successful!");
+      localStorage.setItem('authenticated', 'true');
       navigate("/");
     } catch (error) {
-      let errorMessage = "Login failed. Please check your credentials.";
+      let errorMessage = "Invalid credentials. Please try again.";
       if (error instanceof Error) {
         errorMessage = error.message;
       }
+      setError(errorMessage);
       toast.error(errorMessage);
       console.error("Login error:", error);
     } finally {
@@ -51,75 +44,52 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <Card className="w-full max-w-md mx-auto">
-        <CardHeader className="space-y-1 text-center">
-          <CardTitle className="text-2xl font-bold">Vikas Fabrication Works</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Alert className="mb-4 bg-blue-50 border-blue-200">
-            <Info className="h-4 w-4 text-blue-500" />
-            <AlertDescription className="text-sm text-blue-700">
-              Use the following credentials to login:
-              <div className="font-mono mt-1 p-2 bg-blue-100 rounded">
-                Username: vikasfabtech<br />
-                Password: passfabtech
-              </div>
-            </AlertDescription>
-          </Alert>
-          
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="username">Username</Label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-muted-foreground">
-                  <User size={16} />
-                </div>
-                <Input
-                  id="username"
-                  type="text"
-                  placeholder="Enter username"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  className="pl-10"
-                  autoComplete="username"
-                  disabled={isLoading}
-                />
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-muted-foreground">
-                  <LockKeyhole size={16} />
-                </div>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="Enter password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="pl-10"
-                  autoComplete="current-password"
-                  disabled={isLoading}
-                />
-              </div>
-            </div>
-            
-            <Button
-              type="submit"
-              className="w-full"
+    <div className="login-page">
+      <div className="login-container">
+        <h2>Vikas Fabrication Works</h2>
+        {error && <p className="error-message">{error}</p>}
+        
+        <div className="credentials-info">
+          <p>Use the following credentials:</p>
+          <div className="credentials-box">
+            <div>Username: vikasfabtech</div>
+            <div>Password: passfabtech</div>
+          </div>
+        </div>
+        
+        <form className="login-form" onSubmit={handleSubmit}>
+          <div>
+            <label htmlFor="username-input">Username</label>
+            <input
+              id="username-input"
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              title="Enter your username"
+              placeholder="Enter username"
               disabled={isLoading}
-            >
-              {isLoading ? "Signing in..." : "Sign In"}
-            </Button>
-          </form>
-        </CardContent>
-        <CardFooter className="flex justify-center text-sm text-muted-foreground">
-          Application version 1.0.1
-        </CardFooter>
-      </Card>
+              required
+            />
+          </div>
+          <div>
+            <label htmlFor="password-input">Password</label>
+            <input
+              id="password-input"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              title="Enter your password"
+              placeholder="Enter password"
+              disabled={isLoading}
+              required
+            />
+          </div>
+          <button type="submit" disabled={isLoading}>
+            {isLoading ? "Signing in..." : "Login"}
+          </button>
+        </form>
+        <div className="app-version">Application version 1.0.1</div>
+      </div>
     </div>
   );
 };

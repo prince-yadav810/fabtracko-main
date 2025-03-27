@@ -19,14 +19,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const initializeAuth = async () => {
       try {
+        // Check localStorage first for persisted auth
+        const isLocalAuth = localStorage.getItem('authenticated') === 'true';
+        
         // Initialize auth headers with stored token if any
         authService.initAuth();
         
         // Check if token is valid and get current user
         const currentUser = await authService.getCurrentUser();
-        setUser(currentUser);
+        
+        if (currentUser) {
+          setUser(currentUser);
+          localStorage.setItem('authenticated', 'true');
+        } else if (isLocalAuth) {
+          // If localStorage shows authenticated but no valid token, clear it
+          localStorage.removeItem('authenticated');
+        }
       } catch (error) {
         console.error("Auth initialization error:", error);
+        localStorage.removeItem('authenticated');
       } finally {
         setIsLoading(false);
       }
@@ -51,8 +62,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const user = await authService.login(trimmedUsername, trimmedPassword);
       console.log("Login successful, user:", user);
       setUser(user);
+      localStorage.setItem('authenticated', 'true');
     } catch (error) {
       console.error("Login failed in context:", error);
+      localStorage.removeItem('authenticated');
       throw error;
     }
   };
@@ -60,13 +73,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const logout = () => {
     authService.logout();
     setUser(null);
+    localStorage.removeItem('authenticated');
   };
 
   return (
     <AuthContext.Provider
       value={{
         user,
-        isAuthenticated: !!user,
+        isAuthenticated: !!user || localStorage.getItem('authenticated') === 'true',
         isLoading,
         login,
         logout,
