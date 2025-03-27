@@ -36,8 +36,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const login = async (username: string, password: string) => {
-    const user = await authService.login(username, password);
-    setUser(user);
+    try {
+      console.log("Login attempt with:", { username, passwordProvided: !!password });
+      const user = await authService.login(username, password);
+      console.log("Login successful, user:", user);
+      setUser(user);
+    } catch (error) {
+      console.error("Login failed in context:", error);
+      throw error;
+    }
   };
 
   const logout = () => {

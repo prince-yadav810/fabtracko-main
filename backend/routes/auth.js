@@ -10,13 +10,19 @@ router.post('/login', async (req, res) => {
   try {
     const { username, password } = req.body;
     
+    console.log('Login attempt:', { username, passwordProvided: !!password });
+    
     // Check username
     if (username !== ADMIN_USERNAME) {
+      console.log('Username mismatch');
       return res.status(401).json({ message: 'Invalid credentials' });
     }
     
-    // Check password
+    // Check password using bcrypt compare
     const isMatch = await bcrypt.compare(password, ADMIN_PASSWORD_HASH);
+    
+    console.log('Password check result:', isMatch);
+    
     if (!isMatch) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
@@ -27,6 +33,8 @@ router.post('/login', async (req, res) => {
       process.env.JWT_SECRET || 'your-default-secret-key-change-in-production',
       { expiresIn: '1d' }
     );
+    
+    console.log('Login successful for:', username);
     
     // Send token
     res.status(200).json({
@@ -73,7 +81,5 @@ router.get('/verify', async (req, res) => {
     res.status(401).json({ message: 'Invalid token', error: error.message });
   }
 });
-
-// Remove the init endpoint as it's no longer needed with hard-coded credentials
 
 module.exports = router;

@@ -1,19 +1,27 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { LockKeyhole, User } from "lucide-react";
-import authService from "@/services/authService";
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { LockKeyhole, User, Info } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const LoginPage = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const { login, isAuthenticated } = useAuth();
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate("/");
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,7 +34,7 @@ const LoginPage = () => {
     setIsLoading(true);
     
     try {
-      await authService.login(username, password);
+      await login(username, password);
       toast.success("Login successful!");
       navigate("/");
     } catch (error) {
@@ -35,6 +43,7 @@ const LoginPage = () => {
         errorMessage = error.message;
       }
       toast.error(errorMessage);
+      console.error("Login error:", error);
     } finally {
       setIsLoading(false);
     }
@@ -47,6 +56,17 @@ const LoginPage = () => {
           <CardTitle className="text-2xl font-bold">Vikas Fabrication Works</CardTitle>
         </CardHeader>
         <CardContent>
+          <Alert className="mb-4 bg-blue-50 border-blue-200">
+            <Info className="h-4 w-4 text-blue-500" />
+            <AlertDescription className="text-sm text-blue-700">
+              Use the following credentials to login:
+              <div className="font-mono mt-1 p-2 bg-blue-100 rounded">
+                Username: vikasfabtech<br />
+                Password: passfabtech
+              </div>
+            </AlertDescription>
+          </Alert>
+          
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="username">Username</Label>

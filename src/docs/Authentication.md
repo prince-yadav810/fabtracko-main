@@ -53,3 +53,7 @@ While authentication credentials are hard-coded, all other application data cont
 - If API requests are failing with 401 errors, check that the JWT is valid and not expired
 - For security auditing, check server logs for unauthorized access attempts
 
+## Login Credentials for Testing
+- Username: `vikasfabtech`
+- Password: `passfabtech`
+
