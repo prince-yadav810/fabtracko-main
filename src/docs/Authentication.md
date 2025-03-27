@@ -2,35 +2,31 @@
 # Authentication Documentation
 
 ## Overview
-This document outlines the authentication system implemented for Vikas Fabrication Works application. The system uses a custom server-side authentication with JWT (JSON Web Tokens) and MongoDB for credential storage.
+This document outlines the authentication system implemented for Vikas Fabrication Works application. The system uses hard-coded credentials secured with bcrypt hashing for authentication, while all other data is stored in MongoDB.
 
-## Setup Instructions
+## Authentication Mechanism
 
-### Backend Configuration
-1. Create a `.env` file in the backend directory based on `.env.example`
-2. Set the following variables:
-   - `JWT_SECRET`: A secure random string for signing JWTs
-   - `ADMIN_USERNAME`: Default admin username
-   - `ADMIN_PASSWORD`: Default admin password
+### Credentials Storage
+The authentication credentials are hard-coded in the backend code:
+- Username: `vikasfabtech`
+- Password: `passfabtech` (stored as a bcrypt hash in the code)
 
-### Initialize Admin User
-On first deployment, the admin user needs to be initialized. This happens automatically when the server starts if no users exist in the database.
+Despite being hard-coded, the password is securely hashed using bcrypt to maintain security best practices.
 
-Alternatively, you can make a POST request to `/api/auth/init` to create the admin user:
-```
-POST /api/auth/init
-```
-
-This endpoint will only work if no users exist in the database.
+### Security Considerations
+- The password is stored in hashed form in the code, not as plaintext
+- JWT tokens are still used for session management and API authorization
+- Token expiration is set to 24 hours for additional security
 
 ## Authentication Flow
 
 ### Login Process
 1. User submits credentials (username and password)
-2. Server validates credentials against the stored hashed password
-3. On successful validation, a JWT is generated and returned to the client
-4. Client stores the JWT in local storage
-5. Subsequent API requests include the JWT in the Authorization header
+2. Server compares the submitted username against the hard-coded username
+3. If usernames match, the server uses bcrypt to compare the submitted password with the stored password hash
+4. On successful validation, a JWT is generated and returned to the client
+5. Client stores the JWT in local storage
+6. Subsequent API requests include the JWT in the Authorization header
 
 ### Protected Routes
 All API endpoints except the authentication endpoints require authentication. The JWT must be included in the Authorization header as a Bearer token:
@@ -46,13 +42,14 @@ The frontend uses an AuthContext provider that:
 - Handles protected routes
 - Manages the current user state
 
-## Security Considerations
-- Passwords are hashed using bcrypt before storage
-- JWTs expire after 24 hours
-- Authentication middleware validates tokens on each protected request
-- Failed login attempts return generic error messages to prevent user enumeration
+## Database Organization
+While authentication credentials are hard-coded, all other application data continues to be stored in MongoDB:
+- Worker details (profile information, wages, etc.)
+- Attendance records
+- Payment records
 
 ## Troubleshooting
-- If login fails, check that the username and password match the credentials in the database
+- If login fails, ensure you are using the correct credentials: username `vikasfabtech` and password `passfabtech`
 - If API requests are failing with 401 errors, check that the JWT is valid and not expired
 - For security auditing, check server logs for unauthorized access attempts
+

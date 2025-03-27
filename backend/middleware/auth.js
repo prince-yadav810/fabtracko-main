@@ -1,6 +1,12 @@
 
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const bcrypt = require('bcrypt');
+
+// Hard-coded credentials
+const ADMIN_USERNAME = 'vikasfabtech';
+// Pre-hashed password for 'passfabtech'
+const ADMIN_PASSWORD_HASH = '$2b$10$V9UEFsxZMmT6UvZsQPA/8ueqwCnOzJYYNFQlLD9Qz0CnYlB.9Lwpe';
 
 // Authentication middleware to protect routes
 const authenticate = async (req, res, next) => {
@@ -18,14 +24,18 @@ const authenticate = async (req, res, next) => {
       process.env.JWT_SECRET || 'your-default-secret-key-change-in-production'
     );
     
-    // Find user by id
-    const user = await User.findById(decoded.id).select('-password');
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+    // For hard-coded authentication, we only check if the token is valid
+    // and contains the correct username
+    if (decoded.username !== ADMIN_USERNAME) {
+      return res.status(401).json({ message: 'Authentication failed. Invalid token.' });
     }
     
-    // Attach user to request
-    req.user = user;
+    // Create a minimal user object for compatibility with existing code
+    req.user = {
+      id: 'admin-id',
+      username: ADMIN_USERNAME
+    };
+    
     next();
   } catch (error) {
     console.error('Authentication error:', error);
@@ -33,4 +43,9 @@ const authenticate = async (req, res, next) => {
   }
 };
 
-module.exports = { authenticate };
+module.exports = { 
+  authenticate,
+  // Export for use in auth routes
+  ADMIN_USERNAME,
+  ADMIN_PASSWORD_HASH
+};

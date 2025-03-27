@@ -1,29 +1,29 @@
 
 const express = require('express');
-const User = require('../models/User');
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcrypt');
 const router = express.Router();
+const { ADMIN_USERNAME, ADMIN_PASSWORD_HASH } = require('../middleware/auth');
 
 // Login route
 router.post('/login', async (req, res) => {
   try {
     const { username, password } = req.body;
     
-    // Find user by username
-    const user = await User.findOne({ username });
-    if (!user) {
+    // Check username
+    if (username !== ADMIN_USERNAME) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
     
     // Check password
-    const isMatch = await user.comparePassword(password);
+    const isMatch = await bcrypt.compare(password, ADMIN_PASSWORD_HASH);
     if (!isMatch) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
     
     // Create token
     const token = jwt.sign(
-      { id: user._id, username: user.username },
+      { id: 'admin-id', username: ADMIN_USERNAME },
       process.env.JWT_SECRET || 'your-default-secret-key-change-in-production',
       { expiresIn: '1d' }
     );
@@ -33,8 +33,8 @@ router.post('/login', async (req, res) => {
       message: 'Login successful',
       token,
       user: {
-        id: user._id,
-        username: user.username
+        id: 'admin-id',
+        username: ADMIN_USERNAME
       }
     });
   } catch (error) {
@@ -57,15 +57,15 @@ router.get('/verify', async (req, res) => {
       process.env.JWT_SECRET || 'your-default-secret-key-change-in-production'
     );
     
-    const user = await User.findById(decoded.id).select('-password');
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+    // Verify it's our admin user
+    if (decoded.username !== ADMIN_USERNAME) {
+      return res.status(401).json({ message: 'Invalid token' });
     }
     
     res.status(200).json({
       user: {
-        id: user._id,
-        username: user.username
+        id: 'admin-id',
+        username: ADMIN_USERNAME
       }
     });
   } catch (error) {
@@ -74,33 +74,6 @@ router.get('/verify', async (req, res) => {
   }
 });
 
-// Initialize admin user route (for first-time setup)
-router.post('/init', async (req, res) => {
-  try {
-    // Check if any user exists
-    const userCount = await User.countDocuments();
-    
-    if (userCount > 0) {
-      return res.status(400).json({ 
-        message: 'Admin user already exists. Initialization not allowed.' 
-      });
-    }
-    
-    // Create admin user with environment variables
-    const username = process.env.ADMIN_USERNAME || 'admin';
-    const password = process.env.ADMIN_PASSWORD || 'changeme123';
-    
-    const user = new User({ username, password });
-    await user.save();
-    
-    res.status(201).json({ 
-      message: 'Admin user initialized successfully',
-      username
-    });
-  } catch (error) {
-    console.error('Admin initialization error:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
-});
+// Remove the init endpoint as it's no longer needed with hard-coded credentials
 
 module.exports = router;
