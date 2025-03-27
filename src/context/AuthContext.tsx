@@ -38,7 +38,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const login = async (username: string, password: string) => {
     try {
       console.log("Login attempt with:", { username, passwordProvided: !!password });
-      const user = await authService.login(username, password);
+      
+      // Ensure username and password are strings and properly trimmed
+      const trimmedUsername = String(username).trim();
+      const trimmedPassword = String(password).trim();
+      
+      if (trimmedUsername !== 'vikasfabtech') {
+        console.warn("Username mismatch in client validation");
+      }
+      
+      // Attempt login with the service
+      const user = await authService.login(trimmedUsername, trimmedPassword);
       console.log("Login successful, user:", user);
       setUser(user);
     } catch (error) {

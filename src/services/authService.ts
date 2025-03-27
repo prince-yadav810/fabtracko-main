@@ -44,10 +44,14 @@ const setAuthHeader = () => {
 // Login
 const login = async (username: string, password: string): Promise<AuthUser> => {
   try {
+    console.log(`Attempting login with username: ${username}, API URL: ${API_URL}`);
+    
     const response = await axios.post<LoginResponse>(
       `${API_URL}/auth/login`,
       { username, password }
     );
+    
+    console.log('Login API response:', response.data);
     
     const { token, user } = response.data;
     setToken(token);
@@ -55,8 +59,18 @@ const login = async (username: string, password: string): Promise<AuthUser> => {
     
     return user;
   } catch (error) {
-    if (axios.isAxiosError(error) && error.response) {
-      throw new Error(error.response.data.message || 'Login failed');
+    if (axios.isAxiosError(error)) {
+      console.error('Login axios error:', {
+        status: error.response?.status,
+        data: error.response?.data,
+        message: error.message
+      });
+      
+      if (error.response) {
+        throw new Error(error.response.data.message || 'Login failed');
+      }
+    } else {
+      console.error('Login non-axios error:', error);
     }
     throw new Error('Login failed. Please try again.');
   }
@@ -80,6 +94,7 @@ const getCurrentUser = async (): Promise<AuthUser | null> => {
     const response = await axios.get(`${API_URL}/auth/verify`);
     return response.data.user;
   } catch (error) {
+    console.error('Token verification error:', error);
     removeToken();
     return null;
   }

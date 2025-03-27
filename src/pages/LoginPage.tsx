@@ -11,8 +11,8 @@ import { useAuth } from "@/context/AuthContext";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const LoginPage = () => {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
+  const [username, setUsername] = useState("vikasfabtech");
+  const [password, setPassword] = useState("passfabtech");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { login, isAuthenticated } = useAuth();
@@ -34,6 +34,7 @@ const LoginPage = () => {
     setIsLoading(true);
     
     try {
+      console.log("Submitting login form with:", { username, passwordLength: password.length });
       await login(username, password);
       toast.success("Login successful!");
       navigate("/");
@@ -115,6 +116,9 @@ const LoginPage = () => {
             </Button>
           </form>
         </CardContent>
+        <CardFooter className="flex justify-center text-sm text-muted-foreground">
+          Application version 1.0.1
+        </CardFooter>
       </Card>
     </div>
   );
