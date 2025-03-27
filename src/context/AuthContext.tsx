@@ -1,4 +1,10 @@
 
+/**
+ * NOTE: This authentication context is currently disabled in the application.
+ * It's kept for reference in case authentication needs to be re-enabled in the future.
+ * See the documentation in src/docs/Authentication.md for re-enabling instructions.
+ */
+
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import authService, { AuthUser } from "@/services/authService";
 
