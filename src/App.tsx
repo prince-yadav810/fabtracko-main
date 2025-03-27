@@ -3,9 +3,10 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AppProvider } from "./context/AppContext";
 import { AuthProvider } from "./context/AuthContext";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 import Index from "./pages/Index";
 import LoginPage from "./pages/LoginPage";
@@ -26,12 +27,6 @@ const queryClient = new QueryClient({
   },
 });
 
-// ProtectedRoute ensures that only authenticated users can access its children
-const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
-  const isAuthenticated = localStorage.getItem('authenticated') === 'true';
-  return isAuthenticated ? children : <Navigate to="/login" />;
-};
-
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
@@ -41,19 +36,21 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <Routes>
-              {/* Public login route */}
+              {/* Public Routes */}
               <Route path="/login" element={<LoginPage />} />
               
-              {/* Protected routes */}
-              <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
-              <Route path="/workers" element={<ProtectedRoute><WorkerPage /></ProtectedRoute>} />
-              <Route path="/workers/add" element={<ProtectedRoute><AddWorkerPage /></ProtectedRoute>} />
-              <Route path="/workers/:workerId" element={<ProtectedRoute><WorkerPage /></ProtectedRoute>} />
-              <Route path="/attendance" element={<ProtectedRoute><AttendancePage /></ProtectedRoute>} />
-              <Route path="/payment" element={<ProtectedRoute><PaymentPage /></ProtectedRoute>} />
-              <Route path="/reports" element={<ProtectedRoute><ReportPage /></ProtectedRoute>} />
+              {/* Protected Routes */}
+              <Route element={<ProtectedRoute />}>
+                <Route path="/" element={<Index />} />
+                <Route path="/workers" element={<WorkerPage />} />
+                <Route path="/workers/add" element={<AddWorkerPage />} />
+                <Route path="/workers/:workerId" element={<WorkerPage />} />
+                <Route path="/attendance" element={<AttendancePage />} />
+                <Route path="/payment" element={<PaymentPage />} />
+                <Route path="/reports" element={<ReportPage />} />
+              </Route>
               
-              {/* Catch-all route */}
+              {/* Not Found */}
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
