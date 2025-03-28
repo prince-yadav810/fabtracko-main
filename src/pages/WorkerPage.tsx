@@ -12,7 +12,7 @@ const WorkerPage = () => {
     <div className="min-h-screen bg-background">
       <Header 
         title={workerId ? "Worker Details" : "Workers"} 
-        showBackButton={true}
+        showBackButton={!!workerId}
       />
       <main className="container mx-auto px-4 py-6">
         {workerId ? <WorkerDetail /> : <WorkerList />}

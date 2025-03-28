@@ -11,18 +11,9 @@ import WorkerPage from "./pages/WorkerPage";
 import AttendancePage from "./pages/AttendancePage";
 import PaymentPage from "./pages/PaymentPage";
 import ReportPage from "./pages/ReportPage";
-import AddWorkerPage from "./pages/AddWorkerPage";
 import NotFound from "./pages/NotFound";
 
-// Create a client
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 1,
-      refetchOnWindowFocus: false,
-    },
-  },
-});
+const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -32,16 +23,13 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <Routes>
-            {/* Public Routes - No authentication required */}
             <Route path="/" element={<Index />} />
             <Route path="/workers" element={<WorkerPage />} />
-            <Route path="/workers/add" element={<AddWorkerPage />} />
             <Route path="/workers/:workerId" element={<WorkerPage />} />
             <Route path="/attendance" element={<AttendancePage />} />
             <Route path="/payment" element={<PaymentPage />} />
             <Route path="/reports" element={<ReportPage />} />
-              
-            {/* Not Found */}
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
