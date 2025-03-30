@@ -10,8 +10,7 @@ import {
   ArrowLeft, 
   ArrowRight,
   X,
-  Check,
-  Clock3
+  Check
 } from "lucide-react";
 import { useAppContext } from "../context/AppContext";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, addMonths, isSameMonth } from "date-fns";
@@ -71,15 +70,10 @@ const WorkerDetail: React.FC = () => {
   const presentDays = monthAttendance.filter(record => record.status === "present").length;
   const absentDays = monthAttendance.filter(record => record.status === "absent").length;
   const halfDays = monthAttendance.filter(record => record.status === "halfday").length;
-  const overtimeDays = monthAttendance.filter(record => record.status === "overtime").length;
   
   // Calculate totals for payments
   const totalAdvance = monthPayments
     .filter(payment => payment.type === "advance")
-    .reduce((sum, payment) => sum + payment.amount, 0);
-    
-  const totalOvertime = monthPayments
-    .filter(payment => payment.type === "overtime")
     .reduce((sum, payment) => sum + payment.amount, 0);
   
   // Handle month navigation
@@ -227,10 +221,10 @@ const WorkerDetail: React.FC = () => {
           {/* Overview Tab Content */}
           {activeTab === "overview" && (
             <div className="space-y-6">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="grid grid-cols-3 gap-3">
                 <div className="bg-muted/20 rounded-lg p-4 border border-border">
                   <div className="text-sm text-muted-foreground mb-1">Present Days</div>
-                  <div className="text-2xl font-semibold">{presentDays + overtimeDays}</div>
+                  <div className="text-2xl font-semibold">{presentDays}</div>
                 </div>
                 
                 <div className="bg-muted/20 rounded-lg p-4 border border-border">
@@ -242,27 +236,14 @@ const WorkerDetail: React.FC = () => {
                   <div className="text-sm text-muted-foreground mb-1">Half Days</div>
                   <div className="text-2xl font-semibold">{halfDays}</div>
                 </div>
-                
-                <div className="bg-muted/20 rounded-lg p-4 border border-border">
-                  <div className="text-sm text-muted-foreground mb-1">Overtime Days</div>
-                  <div className="text-2xl font-semibold">{overtimeDays}</div>
-                </div>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="bg-muted/20 rounded-lg p-4 border border-border md:col-span-1">
                   <div className="text-sm text-muted-foreground mb-1">Advance Taken</div>
                   <div className="text-xl font-semibold flex items-center">
                     <IndianRupee className="h-4 w-4 mr-1" />
                     {totalAdvance}
-                  </div>
-                </div>
-                
-                <div className="bg-muted/20 rounded-lg p-4 border border-border md:col-span-1">
-                  <div className="text-sm text-muted-foreground mb-1">Overtime Pay</div>
-                  <div className="text-xl font-semibold flex items-center">
-                    <IndianRupee className="h-4 w-4 mr-1" />
-                    {totalOvertime}
                   </div>
                 </div>
                 
@@ -320,7 +301,7 @@ const WorkerDetail: React.FC = () => {
           {/* Attendance Tab Content */}
           {activeTab === "attendance" && (
             <div className="space-y-4">
-              <div className="grid grid-cols-4 gap-3 mb-4">
+              <div className="grid grid-cols-3 gap-3 mb-4">
                 <div className="flex items-center space-x-2 text-sm">
                   <div className="h-4 w-4 rounded-full bg-status-present"></div>
                   <span>Present</span>
@@ -332,10 +313,6 @@ const WorkerDetail: React.FC = () => {
                 <div className="flex items-center space-x-2 text-sm">
                   <div className="h-4 w-4 rounded-full bg-status-halfday"></div>
                   <span>Half-day</span>
-                </div>
-                <div className="flex items-center space-x-2 text-sm">
-                  <div className="h-4 w-4 rounded-full bg-status-overtime"></div>
-                  <span>Overtime</span>
                 </div>
               </div>
               
@@ -367,8 +344,7 @@ const WorkerDetail: React.FC = () => {
                         <div 
                           className={`calendar-day ${statusClass === "present" ? "present" : 
                           statusClass === "absent" ? "absent" : 
-                          statusClass === "halfday" ? "halfday" : 
-                          statusClass === "overtime" ? "overtime" : "bg-muted"}`}
+                          statusClass === "halfday" ? "halfday" : "bg-muted"}`}
                         >
                           {format(day, "d")}
                         </div>
@@ -378,7 +354,6 @@ const WorkerDetail: React.FC = () => {
                             {status === "present" && <Check className="h-3 w-3 text-status-present" />}
                             {status === "absent" && <X className="h-3 w-3 text-status-absent" />}
                             {status === "halfday" && <Clock className="h-3 w-3 text-status-halfday" />}
-                            {status === "overtime" && <Clock3 className="h-3 w-3 text-status-overtime" />}
                           </div>
                         )}
                       </div>
@@ -407,13 +382,11 @@ const WorkerDetail: React.FC = () => {
                           <div className={`h-8 w-8 rounded-full flex items-center justify-center mr-3 ${
                             record.status === "present" ? "bg-status-present text-white" :
                             record.status === "absent" ? "bg-status-absent text-white" :
-                            record.status === "halfday" ? "bg-status-halfday text-white" :
-                            "bg-status-overtime text-white"
+                            "bg-status-halfday text-white"
                           }`}>
                             {record.status === "present" && <Check className="h-4 w-4" />}
                             {record.status === "absent" && <X className="h-4 w-4" />}
                             {record.status === "halfday" && <Clock className="h-4 w-4" />}
-                            {record.status === "overtime" && <Clock3 className="h-4 w-4" />}
                           </div>
                           
                           <div>
@@ -439,21 +412,11 @@ const WorkerDetail: React.FC = () => {
           {/* Payments Tab Content */}
           {activeTab === "payments" && (
             <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
-                <div className="bg-muted/20 rounded-lg p-4 border border-border">
-                  <div className="text-sm text-muted-foreground mb-1">Total Advance</div>
-                  <div className="text-xl font-semibold flex items-center">
-                    <IndianRupee className="h-4 w-4 mr-1" />
-                    {totalAdvance}
-                  </div>
-                </div>
-                
-                <div className="bg-muted/20 rounded-lg p-4 border border-border">
-                  <div className="text-sm text-muted-foreground mb-1">Total Overtime</div>
-                  <div className="text-xl font-semibold flex items-center">
-                    <IndianRupee className="h-4 w-4 mr-1" />
-                    {totalOvertime}
-                  </div>
+              <div className="bg-muted/20 rounded-lg p-4 border border-border">
+                <div className="text-sm text-muted-foreground mb-1">Total Advance</div>
+                <div className="text-xl font-semibold flex items-center">
+                  <IndianRupee className="h-4 w-4 mr-1" />
+                  {totalAdvance}
                 </div>
               </div>
               
@@ -469,15 +432,13 @@ const WorkerDetail: React.FC = () => {
                         className="flex items-center justify-between p-3 rounded-lg border border-border bg-muted/20"
                       >
                         <div className="flex items-center">
-                          <div className={`h-8 w-8 rounded-full flex items-center justify-center mr-3 ${
-                            payment.type === "advance" ? "bg-status-absent text-white" : "bg-status-overtime text-white"
-                          }`}>
+                          <div className="h-8 w-8 rounded-full flex items-center justify-center mr-3 bg-status-absent text-white">
                             <IndianRupee className="h-4 w-4" />
                           </div>
                           
                           <div>
                             <div className="font-medium capitalize">
-                              {payment.type} Payment
+                              Advance Payment
                             </div>
                             <div className="text-sm text-muted-foreground">
                               {format(new Date(payment.date), "EEEE, dd MMM yyyy")}

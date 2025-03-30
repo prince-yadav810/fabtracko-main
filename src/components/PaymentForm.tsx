@@ -1,6 +1,6 @@
 
 import React, { useState } from "react";
-import { IndianRupee, Calendar, ArrowRight } from "lucide-react";
+import { IndianRupee, Calendar } from "lucide-react";
 import { useAppContext } from "../context/AppContext";
 import { toast } from "sonner";
 
@@ -8,7 +8,6 @@ const PaymentForm: React.FC = () => {
   const { workers, addPayment, payments } = useAppContext();
   const [selectedWorker, setSelectedWorker] = useState("");
   const [amount, setAmount] = useState("");
-  const [paymentType, setPaymentType] = useState<"advance" | "overtime">("advance");
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   
   // Recent payments
@@ -32,13 +31,13 @@ const PaymentForm: React.FC = () => {
     addPayment({
       workerId: selectedWorker,
       amount: Number(amount),
-      type: paymentType,
+      type: "advance",
       date,
     });
     
     // Reset form
     setAmount("");
-    toast.success(`${paymentType.charAt(0).toUpperCase() + paymentType.slice(1)} payment added successfully`);
+    toast.success("Advance payment added successfully");
   };
 
   return (
@@ -91,36 +90,6 @@ const PaymentForm: React.FC = () => {
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-muted-foreground mb-1">
-                Payment Type
-              </label>
-              <div className="flex space-x-2">
-                <button
-                  type="button"
-                  className={`flex-1 py-2 px-4 rounded-md border ${
-                    paymentType === "advance"
-                      ? "bg-status-absent/20 border-status-absent text-status-absent"
-                      : "bg-background border-input text-muted-foreground"
-                  }`}
-                  onClick={() => setPaymentType("advance")}
-                >
-                  Advance
-                </button>
-                <button
-                  type="button"
-                  className={`flex-1 py-2 px-4 rounded-md border ${
-                    paymentType === "overtime"
-                      ? "bg-status-overtime/20 border-status-overtime text-status-overtime"
-                      : "bg-background border-input text-muted-foreground"
-                  }`}
-                  onClick={() => setPaymentType("overtime")}
-                >
-                  Overtime
-                </button>
-              </div>
-            </div>
-            
-            <div>
               <label htmlFor="date" className="block text-sm font-medium text-muted-foreground mb-1">
                 Date
               </label>
@@ -144,7 +113,7 @@ const PaymentForm: React.FC = () => {
               type="submit"
               className="w-full py-2 px-4 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
             >
-              Add Payment
+              Add Advance Payment
             </button>
           </form>
         </div>
@@ -175,10 +144,8 @@ const PaymentForm: React.FC = () => {
                         <IndianRupee className="h-3 w-3 mr-1" />
                         {payment.amount}
                       </div>
-                      <div className={`status-chip mt-1 ${
-                        payment.type === "advance" ? "status-absent" : "status-overtime"
-                      }`}>
-                        {payment.type.charAt(0).toUpperCase() + payment.type.slice(1)}
+                      <div className="status-chip mt-1 status-absent">
+                        Advance
                       </div>
                     </div>
                   </div>

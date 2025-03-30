@@ -14,7 +14,7 @@ import {
 import { toast } from "../hooks/use-toast";
 
 // Define types for our data models
-export type AttendanceStatus = "present" | "absent" | "halfday" | "overtime";
+export type AttendanceStatus = "present" | "absent" | "halfday";
 
 export interface Worker {
   id: string;
@@ -36,7 +36,7 @@ export interface Payment {
   workerId: string;
   date: string;
   amount: number;
-  type: "advance" | "overtime";
+  type: "advance";
 }
 
 interface AppContextType {
@@ -168,7 +168,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
         id: "a6",
         workerId: "3",
         date: yesterday.toISOString().split('T')[0],
-        status: "overtime"
+        status: "present"
       },
       {
         id: "a7",
@@ -197,14 +197,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
         date: yesterday.toISOString().split('T')[0],
         amount: 1000,
         type: "advance"
-      },
-      {
-        id: "p2",
-        workerId: "3",
-        date: yesterday.toISOString().split('T')[0],
-        amount: 500,
-        type: "overtime"
-      },
+      }
     ];
 
     try {
@@ -382,21 +375,16 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     const totalDaysPresent = monthAttendance.reduce((total, record) => {
       if (record.status === "present") return total + 1;
       if (record.status === "halfday") return total + 0.5;
-      if (record.status === "overtime") return total + 1;
       return total;
     }, 0);
 
     const baseWages = totalDaysPresent * worker.dailyWage;
 
-    const overtimePayments = monthPayments
-      .filter((payment) => payment.type === "overtime")
-      .reduce((total, payment) => total + payment.amount, 0);
-
     const advancePayments = monthPayments
       .filter((payment) => payment.type === "advance")
       .reduce((total, payment) => total + payment.amount, 0);
 
-    return baseWages + overtimePayments - advancePayments;
+    return baseWages - advancePayments;
   };
 
   return (

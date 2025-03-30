@@ -117,7 +117,11 @@ export const fetchPayments = async (): Promise<Payment[]> => {
     const querySnapshot = await getDocs(collection(db, PAYMENTS_COLLECTION));
     const payments: Payment[] = [];
     querySnapshot.forEach((doc) => {
-      payments.push({ id: doc.id, ...doc.data() } as Payment);
+      const data = doc.data();
+      // Only include advance payments when fetching
+      if (data.type === "advance") {
+        payments.push({ id: doc.id, ...data } as Payment);
+      }
     });
     return payments;
   } catch (error) {
