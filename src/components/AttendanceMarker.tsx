@@ -1,6 +1,6 @@
 
 import React, { useState } from "react";
-import { Check, X, Clock } from "lucide-react";
+import { Check, X, Clock, Clock3 } from "lucide-react";
 import { useAppContext } from "../context/AppContext";
 import { format } from "date-fns";
 
@@ -27,7 +27,7 @@ const AttendanceMarker: React.FC = () => {
   };
 
   // Handle attendance status change
-  const handleStatusChange = (workerId: string, status: "present" | "absent" | "halfday") => {
+  const handleStatusChange = (workerId: string, status: "present" | "absent" | "halfday" | "overtime") => {
     markAttendance(workerId, date, status);
   };
 
@@ -113,6 +113,18 @@ const AttendanceMarker: React.FC = () => {
                     title="Half Day"
                   >
                     <Clock className="h-5 w-5" />
+                  </button>
+                  
+                  <button
+                    className={`h-10 w-10 rounded-full flex items-center justify-center transition-colors ${
+                      currentStatus === "overtime" 
+                        ? "bg-status-overtime text-white" 
+                        : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                    }`}
+                    onClick={() => handleStatusChange(worker.id, "overtime")}
+                    title="Overtime"
+                  >
+                    <Clock3 className="h-5 w-5" />
                   </button>
                 </div>
               </div>

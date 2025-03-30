@@ -47,10 +47,15 @@ const ReportView: React.FC = () => {
     const presentDays = workerAttendance.filter(record => record.status === "present").length;
     const absentDays = workerAttendance.filter(record => record.status === "absent").length;
     const halfDays = workerAttendance.filter(record => record.status === "halfday").length;
+    const overtimeDays = workerAttendance.filter(record => record.status === "overtime").length;
     
     // Calculate payment totals
     const totalAdvance = workerPayments
       .filter(payment => payment.type === "advance")
+      .reduce((sum, payment) => sum + payment.amount, 0);
+      
+    const totalOvertime = workerPayments
+      .filter(payment => payment.type === "overtime")
       .reduce((sum, payment) => sum + payment.amount, 0);
     
     // Calculate net wages
@@ -61,7 +66,9 @@ const ReportView: React.FC = () => {
       presentDays,
       absentDays,
       halfDays,
+      overtimeDays,
       totalAdvance,
+      totalOvertime,
       netWages
     };
   });
@@ -85,6 +92,7 @@ const ReportView: React.FC = () => {
   // Calculate totals across all workers
   const totalNetWages = workerSummaries.reduce((sum, summary) => sum + summary.netWages, 0);
   const totalAdvances = workerSummaries.reduce((sum, summary) => sum + summary.totalAdvance, 0);
+  const totalOvertimes = workerSummaries.reduce((sum, summary) => sum + summary.totalOvertime, 0);
 
   // Handle download/print report
   const handleDownloadReport = () => {
@@ -163,7 +171,7 @@ const ReportView: React.FC = () => {
         </div>
         
         <div className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <div className="bg-muted/20 rounded-lg p-4 border border-border">
               <div className="text-sm text-muted-foreground mb-1">Total Net Wages</div>
               <div className="text-2xl font-semibold flex items-center">
@@ -177,6 +185,14 @@ const ReportView: React.FC = () => {
               <div className="text-2xl font-semibold flex items-center">
                 <IndianRupee className="h-5 w-5 mr-1" />
                 {totalAdvances.toLocaleString('en-IN')}
+              </div>
+            </div>
+            
+            <div className="bg-muted/20 rounded-lg p-4 border border-border">
+              <div className="text-sm text-muted-foreground mb-1">Total Overtime</div>
+              <div className="text-2xl font-semibold flex items-center">
+                <IndianRupee className="h-5 w-5 mr-1" />
+                {totalOvertimes.toLocaleString('en-IN')}
               </div>
             </div>
           </div>
@@ -200,7 +216,9 @@ const ReportView: React.FC = () => {
                 <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground tracking-wider">Present Days</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground tracking-wider">Absent</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground tracking-wider">Half Days</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground tracking-wider">Overtime</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground tracking-wider">Advances</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground tracking-wider">Overtime Pay</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground tracking-wider">Net Wages</th>
               </tr>
             </thead>
@@ -226,7 +244,7 @@ const ReportView: React.FC = () => {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center space-x-1">
                       <div className="h-3 w-3 rounded-full bg-status-present"></div>
-                      <span>{summary.presentDays}</span>
+                      <span>{summary.presentDays + summary.overtimeDays}</span>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -242,9 +260,21 @@ const ReportView: React.FC = () => {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center space-x-1">
+                      <div className="h-3 w-3 rounded-full bg-status-overtime"></div>
+                      <span>{summary.overtimeDays}</span>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       <IndianRupee className="h-3 w-3 mr-1 text-status-absent" />
                       <span>{summary.totalAdvance}</span>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center">
+                      <IndianRupee className="h-3 w-3 mr-1 text-status-overtime" />
+                      <span>{summary.totalOvertime}</span>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -258,7 +288,7 @@ const ReportView: React.FC = () => {
               
               {workerSummaries.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-6 py-8 text-center text-muted-foreground">
+                  <td colSpan={8} className="px-6 py-8 text-center text-muted-foreground">
                     No data available for the selected month
                   </td>
                 </tr>

@@ -17,7 +17,7 @@ const paymentSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['advance'],
+    enum: ['advance', 'overtime'],
     required: true
   }
 }, { timestamps: true });
