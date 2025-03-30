@@ -19,10 +19,11 @@ const Header: React.FC<HeaderProps> = ({ title, showBackButton = false }) => {
           {showBackButton && (
             <button
               onClick={() => navigate(-1)}
-              className="mr-3 h-8 w-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
+              className="flex items-center text-primary mr-4 rounded-full hover:bg-gray-50 transition-colors py-1"
               aria-label="Go back"
             >
               <ChevronLeft className="h-5 w-5" />
+              <span className="text-sm font-medium">Back</span>
             </button>
           )}
           <h1 className="text-xl font-semibold tracking-tight">{title}</h1>

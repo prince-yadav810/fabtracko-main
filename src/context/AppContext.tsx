@@ -1,5 +1,17 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { 
+  fetchWorkers, 
+  fetchAttendance, 
+  fetchPayments,
+  addWorkerToApi,
+  updateWorkerInApi,
+  deleteWorkerFromApi,
+  markAttendanceInApi,
+  addPaymentToApi,
+  deletePaymentFromApi,
+  seedInitialData
+} from "../services/apiService";
+import { toast } from "../hooks/use-toast";
 
 // Define types for our data models
 export type AttendanceStatus = "present" | "absent" | "halfday" | "overtime";
@@ -31,12 +43,12 @@ interface AppContextType {
   workers: Worker[];
   attendanceRecords: AttendanceRecord[];
   payments: Payment[];
-  addWorker: (worker: Omit<Worker, "id">) => void;
-  updateWorker: (worker: Worker) => void;
-  deleteWorker: (id: string) => void;
-  markAttendance: (workerId: string, date: string, status: AttendanceStatus) => void;
-  addPayment: (payment: Omit<Payment, "id">) => void;
-  deletePayment: (id: string) => void;
+  addWorker: (worker: Omit<Worker, "id">) => Promise<string>;
+  updateWorker: (worker: Worker) => Promise<void>;
+  deleteWorker: (id: string) => Promise<void>;
+  markAttendance: (workerId: string, date: string, status: AttendanceStatus) => Promise<void>;
+  addPayment: (payment: Omit<Payment, "id">) => Promise<void>;
+  deletePayment: (id: string) => Promise<void>;
   getWorkerAttendance: (workerId: string, month: number, year: number) => AttendanceRecord[];
   getWorkerPayments: (workerId: string, month: number, year: number) => Payment[];
   calculateNetWages: (workerId: string, month: number, year: number) => number;
@@ -57,192 +69,287 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [selectedWorker, setSelectedWorker] = useState<Worker | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isDataSeeded, setIsDataSeeded] = useState(false);
 
-  // Simulate loading data from local storage
   useEffect(() => {
-    // In a real app, you would load from local storage or a database
-    const loadSampleData = () => {
-      // Set some sample data
-      setWorkers([
-        {
-          id: "1",
-          name: "Rajesh Kumar",
-          joiningDate: "2023-01-15",
-          dailyWage: 500,
-          profilePicture: "https://randomuser.me/api/portraits/men/1.jpg",
-        },
-        {
-          id: "2",
-          name: "Sunil Verma",
-          joiningDate: "2023-02-10",
-          dailyWage: 450,
-          profilePicture: "https://randomuser.me/api/portraits/men/2.jpg",
-        },
-        {
-          id: "3",
-          name: "Amit Singh",
-          joiningDate: "2023-03-05",
-          dailyWage: 550,
-          profilePicture: "https://randomuser.me/api/portraits/men/3.jpg",
-        },
-      ]);
+    const loadData = async () => {
+      setIsLoading(true);
+      try {
+        const loadedWorkers = await fetchWorkers();
+        const loadedAttendance = await fetchAttendance();
+        const loadedPayments = await fetchPayments();
 
-      // Sample attendance records
-      const today = new Date();
-      const yesterday = new Date(today);
-      yesterday.setDate(yesterday.getDate() - 1);
-      const dayBefore = new Date(today);
-      dayBefore.setDate(dayBefore.getDate() - 2);
-
-      setAttendanceRecords([
-        {
-          id: "a1",
-          workerId: "1",
-          date: today.toISOString().split('T')[0],
-          status: "present"
-        },
-        {
-          id: "a2",
-          workerId: "2",
-          date: today.toISOString().split('T')[0],
-          status: "absent"
-        },
-        {
-          id: "a3",
-          workerId: "3",
-          date: today.toISOString().split('T')[0],
-          status: "halfday"
-        },
-        {
-          id: "a4",
-          workerId: "1",
-          date: yesterday.toISOString().split('T')[0],
-          status: "present"
-        },
-        {
-          id: "a5",
-          workerId: "2",
-          date: yesterday.toISOString().split('T')[0],
-          status: "present"
-        },
-        {
-          id: "a6",
-          workerId: "3",
-          date: yesterday.toISOString().split('T')[0],
-          status: "overtime"
-        },
-        {
-          id: "a7",
-          workerId: "1",
-          date: dayBefore.toISOString().split('T')[0],
-          status: "present"
-        },
-        {
-          id: "a8",
-          workerId: "2",
-          date: dayBefore.toISOString().split('T')[0],
-          status: "present"
-        },
-        {
-          id: "a9",
-          workerId: "3",
-          date: dayBefore.toISOString().split('T')[0],
-          status: "present"
-        },
-      ]);
-
-      // Sample payments
-      setPayments([
-        {
-          id: "p1",
-          workerId: "1",
-          date: yesterday.toISOString().split('T')[0],
-          amount: 1000,
-          type: "advance"
-        },
-        {
-          id: "p2",
-          workerId: "3",
-          date: yesterday.toISOString().split('T')[0],
-          amount: 500,
-          type: "overtime"
-        },
-      ]);
-
-      setIsLoading(false);
+        if (loadedWorkers.length === 0 && !isDataSeeded) {
+          await seedSampleData();
+          setIsDataSeeded(true);
+        } else {
+          setWorkers(loadedWorkers);
+          setAttendanceRecords(loadedAttendance);
+          setPayments(loadedPayments);
+        }
+      } catch (error) {
+        console.error("Error loading data:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load data. Please try again later.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
     };
 
-    // Simulate a small delay for loading
-    setTimeout(loadSampleData, 1000);
-  }, []);
+    loadData();
+  }, [isDataSeeded]);
 
-  // Add a new worker
-  const addWorker = (worker: Omit<Worker, "id">) => {
-    const newWorker: Worker = {
-      ...worker,
-      id: Date.now().toString(), // Simple ID generation
-    };
-    setWorkers((prev) => [...prev, newWorker]);
-  };
+  const seedSampleData = async () => {
+    const sampleWorkers: Worker[] = [
+      {
+        id: "1",
+        name: "Rajesh Kumar",
+        joiningDate: "2023-01-15",
+        dailyWage: 500,
+        profilePicture: "https://randomuser.me/api/portraits/men/1.jpg",
+      },
+      {
+        id: "2",
+        name: "Sunil Verma",
+        joiningDate: "2023-02-10",
+        dailyWage: 450,
+        profilePicture: "https://randomuser.me/api/portraits/men/2.jpg",
+      },
+      {
+        id: "3",
+        name: "Amit Singh",
+        joiningDate: "2023-03-05",
+        dailyWage: 550,
+        profilePicture: "https://randomuser.me/api/portraits/men/3.jpg",
+      },
+    ];
 
-  // Update an existing worker
-  const updateWorker = (updatedWorker: Worker) => {
-    setWorkers((prev) => 
-      prev.map((worker) => (worker.id === updatedWorker.id ? updatedWorker : worker))
-    );
-  };
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const dayBefore = new Date(today);
+    dayBefore.setDate(dayBefore.getDate() - 2);
 
-  // Delete a worker
-  const deleteWorker = (id: string) => {
-    setWorkers((prev) => prev.filter((worker) => worker.id !== id));
-    // Also clean up related records
-    setAttendanceRecords((prev) => 
-      prev.filter((record) => record.workerId !== id)
-    );
-    setPayments((prev) => prev.filter((payment) => payment.workerId !== id));
-  };
+    const sampleAttendance: AttendanceRecord[] = [
+      {
+        id: "a1",
+        workerId: "1",
+        date: today.toISOString().split('T')[0],
+        status: "present"
+      },
+      {
+        id: "a2",
+        workerId: "2",
+        date: today.toISOString().split('T')[0],
+        status: "absent"
+      },
+      {
+        id: "a3",
+        workerId: "3",
+        date: today.toISOString().split('T')[0],
+        status: "halfday"
+      },
+      {
+        id: "a4",
+        workerId: "1",
+        date: yesterday.toISOString().split('T')[0],
+        status: "present"
+      },
+      {
+        id: "a5",
+        workerId: "2",
+        date: yesterday.toISOString().split('T')[0],
+        status: "present"
+      },
+      {
+        id: "a6",
+        workerId: "3",
+        date: yesterday.toISOString().split('T')[0],
+        status: "overtime"
+      },
+      {
+        id: "a7",
+        workerId: "1",
+        date: dayBefore.toISOString().split('T')[0],
+        status: "present"
+      },
+      {
+        id: "a8",
+        workerId: "2",
+        date: dayBefore.toISOString().split('T')[0],
+        status: "present"
+      },
+      {
+        id: "a9",
+        workerId: "3",
+        date: dayBefore.toISOString().split('T')[0],
+        status: "present"
+      },
+    ];
 
-  // Mark attendance for a worker
-  const markAttendance = (workerId: string, date: string, status: AttendanceStatus) => {
-    // Check if there's already a record for this worker and date
-    const existingRecord = attendanceRecords.find(
-      (record) => record.workerId === workerId && record.date === date
-    );
+    const samplePayments: Payment[] = [
+      {
+        id: "p1",
+        workerId: "1",
+        date: yesterday.toISOString().split('T')[0],
+        amount: 1000,
+        type: "advance"
+      },
+      {
+        id: "p2",
+        workerId: "3",
+        date: yesterday.toISOString().split('T')[0],
+        amount: 500,
+        type: "overtime"
+      },
+    ];
 
-    if (existingRecord) {
-      // Update existing record
-      setAttendanceRecords((prev) =>
-        prev.map((record) =>
-          record.id === existingRecord.id ? { ...record, status } : record
-        )
-      );
-    } else {
-      // Add new record
-      const newRecord: AttendanceRecord = {
-        id: Date.now().toString(),
-        workerId,
-        date,
-        status,
-      };
-      setAttendanceRecords((prev) => [...prev, newRecord]);
+    try {
+      await seedInitialData(sampleWorkers, sampleAttendance, samplePayments);
+      setWorkers(sampleWorkers);
+      setAttendanceRecords(sampleAttendance);
+      setPayments(samplePayments);
+    } catch (error) {
+      console.error("Error seeding sample data:", error);
+      toast({
+        title: "Error",
+        description: "Failed to initialize sample data.",
+        variant: "destructive",
+      });
     }
   };
 
-  // Add a payment record
-  const addPayment = (payment: Omit<Payment, "id">) => {
-    const newPayment: Payment = {
-      ...payment,
-      id: Date.now().toString(),
-    };
-    setPayments((prev) => [...prev, newPayment]);
+  const addWorker = async (worker: Omit<Worker, "id">): Promise<string> => {
+    try {
+      const newWorkerId = await addWorkerToApi(worker);
+      const newWorker: Worker = {
+        ...worker,
+        id: newWorkerId,
+      };
+      setWorkers((prev) => [...prev, newWorker]);
+      return newWorkerId;
+    } catch (error) {
+      console.error("Error adding worker:", error);
+      toast({
+        title: "Error",
+        description: "Failed to add worker.",
+        variant: "destructive",
+      });
+      throw error;
+    }
   };
 
-  // Delete a payment record
-  const deletePayment = (id: string) => {
-    setPayments((prev) => prev.filter((payment) => payment.id !== id));
+  const updateWorker = async (updatedWorker: Worker): Promise<void> => {
+    try {
+      await updateWorkerInApi(updatedWorker);
+      setWorkers((prev) => 
+        prev.map((worker) => (worker.id === updatedWorker.id ? updatedWorker : worker))
+      );
+    } catch (error) {
+      console.error("Error updating worker:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update worker.",
+        variant: "destructive",
+      });
+      throw error;
+    }
   };
 
-  // Get attendance records for a worker in a specific month
+  const deleteWorker = async (id: string): Promise<void> => {
+    try {
+      await deleteWorkerFromApi(id);
+      setWorkers((prev) => prev.filter((worker) => worker.id !== id));
+      setAttendanceRecords((prev) => 
+        prev.filter((record) => record.workerId !== id)
+      );
+      setPayments((prev) => prev.filter((payment) => payment.workerId !== id));
+    } catch (error) {
+      console.error("Error deleting worker:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete worker.",
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
+  const markAttendance = async (workerId: string, date: string, status: AttendanceStatus): Promise<void> => {
+    try {
+      await markAttendanceInApi(workerId, date, status);
+      
+      const existingRecord = attendanceRecords.find(
+        (record) => record.workerId === workerId && record.date === date
+      );
+
+      if (existingRecord) {
+        setAttendanceRecords((prev) =>
+          prev.map((record) =>
+            record.id === existingRecord.id ? { ...record, status } : record
+          )
+        );
+      } else {
+        const tempId = Date.now().toString();
+        const newRecord: AttendanceRecord = {
+          id: tempId,
+          workerId,
+          date,
+          status,
+        };
+        setAttendanceRecords((prev) => [...prev, newRecord]);
+        
+        const updatedRecords = await fetchAttendance();
+        setAttendanceRecords(updatedRecords);
+      }
+    } catch (error) {
+      console.error("Error marking attendance:", error);
+      toast({
+        title: "Error",
+        description: "Failed to mark attendance.",
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
+  const addPayment = async (payment: Omit<Payment, "id">): Promise<void> => {
+    try {
+      const newPaymentId = await addPaymentToApi(payment);
+      const newPayment: Payment = {
+        ...payment,
+        id: newPaymentId,
+      };
+      setPayments((prev) => [...prev, newPayment]);
+    } catch (error) {
+      console.error("Error adding payment:", error);
+      toast({
+        title: "Error",
+        description: "Failed to add payment.",
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
+  const deletePayment = async (id: string): Promise<void> => {
+    try {
+      await deletePaymentFromApi(id);
+      setPayments((prev) => prev.filter((payment) => payment.id !== id));
+    } catch (error) {
+      console.error("Error deleting payment:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete payment.",
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
   const getWorkerAttendance = (workerId: string, month: number, year: number) => {
     return attendanceRecords.filter((record) => {
       const recordDate = new Date(record.date);
@@ -254,7 +361,6 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     });
   };
 
-  // Get payment records for a worker in a specific month
   const getWorkerPayments = (workerId: string, month: number, year: number) => {
     return payments.filter((payment) => {
       const paymentDate = new Date(payment.date);
@@ -266,7 +372,6 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     });
   };
 
-  // Calculate net wages for a worker in a specific month
   const calculateNetWages = (workerId: string, month: number, year: number) => {
     const worker = workers.find((w) => w.id === workerId);
     if (!worker) return 0;
@@ -274,28 +379,23 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     const monthAttendance = getWorkerAttendance(workerId, month, year);
     const monthPayments = getWorkerPayments(workerId, month, year);
 
-    // Calculate total days present (full day = 1, half day = 0.5)
     const totalDaysPresent = monthAttendance.reduce((total, record) => {
       if (record.status === "present") return total + 1;
       if (record.status === "halfday") return total + 0.5;
-      if (record.status === "overtime") return total + 1; // Overtime also counts as present
+      if (record.status === "overtime") return total + 1;
       return total;
     }, 0);
 
-    // Calculate base wages
     const baseWages = totalDaysPresent * worker.dailyWage;
 
-    // Calculate overtime pay
     const overtimePayments = monthPayments
       .filter((payment) => payment.type === "overtime")
       .reduce((total, payment) => total + payment.amount, 0);
 
-    // Calculate advance payments
     const advancePayments = monthPayments
       .filter((payment) => payment.type === "advance")
       .reduce((total, payment) => total + payment.amount, 0);
 
-    // Net wages = base + overtime - advances
     return baseWages + overtimePayments - advancePayments;
   };
 
@@ -324,7 +424,6 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   );
 };
 
-// Custom hook to use the app context
 export const useAppContext = () => {
   const context = useContext(AppContext);
   if (context === undefined) {
