@@ -1,4 +1,3 @@
-
 import { db } from "../config/firebase";
 import { 
   collection, 
@@ -12,19 +11,29 @@ import {
   updateDoc 
 } from "firebase/firestore";
 import { Worker, AttendanceRecord, Payment, AttendanceStatus } from "../context/AppContext";
+import authService from "./authService";
 
 // Collection references
 const WORKERS_COLLECTION = "workers";
 const ATTENDANCE_COLLECTION = "attendance";
 const PAYMENTS_COLLECTION = "payments";
 
-// Worker operations
+// Ensure auth headers are set before any API call
+const ensureAuthHeaders = () => {
+  authService.initAuthHeaders();
+};
+
+// =======================
+// Worker Operations
+// =======================
+
 export const fetchWorkers = async (): Promise<Worker[]> => {
+  ensureAuthHeaders();
   try {
     const querySnapshot = await getDocs(collection(db, WORKERS_COLLECTION));
     const workers: Worker[] = [];
-    querySnapshot.forEach((doc) => {
-      workers.push({ id: doc.id, ...doc.data() } as Worker);
+    querySnapshot.forEach((docSnap) => {
+      workers.push({ id: docSnap.id, ...docSnap.data() } as Worker);
     });
     return workers;
   } catch (error) {
@@ -34,6 +43,7 @@ export const fetchWorkers = async (): Promise<Worker[]> => {
 };
 
 export const addWorkerToFirebase = async (worker: Omit<Worker, "id">): Promise<string> => {
+  ensureAuthHeaders();
   try {
     const docRef = await addDoc(collection(db, WORKERS_COLLECTION), worker);
     return docRef.id;
@@ -44,6 +54,7 @@ export const addWorkerToFirebase = async (worker: Omit<Worker, "id">): Promise<s
 };
 
 export const updateWorkerInFirebase = async (worker: Worker): Promise<void> => {
+  ensureAuthHeaders();
   try {
     const workerRef = doc(db, WORKERS_COLLECTION, worker.id);
     await updateDoc(workerRef, { ...worker });
@@ -54,6 +65,7 @@ export const updateWorkerInFirebase = async (worker: Worker): Promise<void> => {
 };
 
 export const deleteWorkerFromFirebase = async (id: string): Promise<void> => {
+  ensureAuthHeaders();
   try {
     await deleteDoc(doc(db, WORKERS_COLLECTION, id));
   } catch (error) {
@@ -62,13 +74,17 @@ export const deleteWorkerFromFirebase = async (id: string): Promise<void> => {
   }
 };
 
-// Attendance operations
+// =======================
+// Attendance Operations
+// =======================
+
 export const fetchAttendance = async (): Promise<AttendanceRecord[]> => {
+  ensureAuthHeaders();
   try {
     const querySnapshot = await getDocs(collection(db, ATTENDANCE_COLLECTION));
     const attendance: AttendanceRecord[] = [];
-    querySnapshot.forEach((doc) => {
-      attendance.push({ id: doc.id, ...doc.data() } as AttendanceRecord);
+    querySnapshot.forEach((docSnap) => {
+      attendance.push({ id: docSnap.id, ...docSnap.data() } as AttendanceRecord);
     });
     return attendance;
   } catch (error) {
@@ -82,6 +98,7 @@ export const markAttendanceInFirebase = async (
   date: string,
   status: AttendanceStatus
 ): Promise<void> => {
+  ensureAuthHeaders();
   try {
     // Check if record already exists for this worker and date
     const q = query(
@@ -98,11 +115,7 @@ export const markAttendanceInFirebase = async (
       await updateDoc(doc(db, ATTENDANCE_COLLECTION, docId), { status });
     } else {
       // Create new record
-      const newRecord = {
-        workerId,
-        date,
-        status,
-      };
+      const newRecord = { workerId, date, status };
       await addDoc(collection(db, ATTENDANCE_COLLECTION), newRecord);
     }
   } catch (error) {
@@ -111,13 +124,17 @@ export const markAttendanceInFirebase = async (
   }
 };
 
-// Payment operations
+// =======================
+// Payment Operations
+// =======================
+
 export const fetchPayments = async (): Promise<Payment[]> => {
+  ensureAuthHeaders();
   try {
     const querySnapshot = await getDocs(collection(db, PAYMENTS_COLLECTION));
     const payments: Payment[] = [];
-    querySnapshot.forEach((doc) => {
-      payments.push({ id: doc.id, ...doc.data() } as Payment);
+    querySnapshot.forEach((docSnap) => {
+      payments.push({ id: docSnap.id, ...docSnap.data() } as Payment);
     });
     return payments;
   } catch (error) {
@@ -127,6 +144,7 @@ export const fetchPayments = async (): Promise<Payment[]> => {
 };
 
 export const addPaymentToFirebase = async (payment: Omit<Payment, "id">): Promise<string> => {
+  ensureAuthHeaders();
   try {
     const docRef = await addDoc(collection(db, PAYMENTS_COLLECTION), payment);
     return docRef.id;
@@ -137,6 +155,7 @@ export const addPaymentToFirebase = async (payment: Omit<Payment, "id">): Promis
 };
 
 export const deletePaymentFromFirebase = async (id: string): Promise<void> => {
+  ensureAuthHeaders();
   try {
     await deleteDoc(doc(db, PAYMENTS_COLLECTION, id));
   } catch (error) {
@@ -145,31 +164,32 @@ export const deletePaymentFromFirebase = async (id: string): Promise<void> => {
   }
 };
 
-// Helper function to seed initial data if needed
+// =======================
+// Seed Initial Data
+// =======================
+
 export const seedInitialData = async (
   workers: Worker[],
   attendance: AttendanceRecord[],
   payments: Payment[]
 ): Promise<void> => {
+  ensureAuthHeaders();
   try {
-    // Add workers
+    // Seed workers
     for (const worker of workers) {
       const { id, ...workerData } = worker;
       await setDoc(doc(db, WORKERS_COLLECTION, id), workerData);
     }
-    
-    // Add attendance records
+    // Seed attendance records
     for (const record of attendance) {
       const { id, ...recordData } = record;
       await setDoc(doc(db, ATTENDANCE_COLLECTION, id), recordData);
     }
-    
-    // Add payment records
+    // Seed payments
     for (const payment of payments) {
       const { id, ...paymentData } = payment;
       await setDoc(doc(db, PAYMENTS_COLLECTION, id), paymentData);
     }
-    
     console.log("Initial data seeded successfully");
   } catch (error) {
     console.error("Error seeding initial data:", error);
