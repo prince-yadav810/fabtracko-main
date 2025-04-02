@@ -1,24 +1,39 @@
-
+import axios from 'axios';
 import { Worker, AttendanceRecord, Payment, AttendanceStatus } from "../context/AppContext";
+import authService from '../services/authService';
 
-// Base API URL - would be configured based on environment
-const API_URL = process.env.NODE_ENV === 'production' 
+// Base API URL - configured based on environment
+const API_URL = process.env.NODE_ENV === 'production'
   ? 'https://your-production-api.googlegcloud.app/api'
   : 'http://localhost:5001/api';
+
+// Setup request interceptor to always include the latest token
+axios.interceptors.request.use((config) => {
+  const token = authService.getToken();
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+}, (error) => {
+  return Promise.reject(error);
+});
 
 // Error handling helper
 const handleApiError = (error: any, message: string) => {
   console.error(`${message}:`, error);
-  // Re-throw for component-level handling
   throw error;
-}
+};
 
-// Worker operations
+// =======================
+// Worker Operations
+// =======================
+
 export const fetchWorkers = async (): Promise<Worker[]> => {
   try {
-    const response = await fetch(`${API_URL}/workers`);
-    if (!response.ok) throw new Error(`HTTP error ${response.status}`);
-    const workers = await response.json();
+    const response = await axios.get(`${API_URL}/workers`);
+    if (!response.data) throw new Error(`HTTP error ${response.status}`);
+    
+    const workers = response.data;
     return workers.map((worker: any) => ({
       ...worker,
       id: worker._id, // Map MongoDB _id to our id field
@@ -31,15 +46,11 @@ export const fetchWorkers = async (): Promise<Worker[]> => {
 
 export const addWorkerToApi = async (worker: Omit<Worker, "id">): Promise<string> => {
   try {
-    const response = await fetch(`${API_URL}/workers`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(worker)
+    const response = await axios.post(`${API_URL}/workers`, worker, {
+      headers: { 'Content-Type': 'application/json' }
     });
-    
-    if (!response.ok) throw new Error(`HTTP error ${response.status}`);
-    const newWorker = await response.json();
-    return newWorker._id; // Return the MongoDB _id
+    if (!response.data) throw new Error(`HTTP error ${response.status}`);
+    return response.data._id; // Return the MongoDB _id
   } catch (error) {
     handleApiError(error, "Error adding worker");
     throw error;
@@ -48,14 +59,13 @@ export const addWorkerToApi = async (worker: Omit<Worker, "id">): Promise<string
 
 export const updateWorkerInApi = async (worker: Worker): Promise<void> => {
   try {
-    const { id, ...workerData } = worker; // Extract id, send rest as body
-    const response = await fetch(`${API_URL}/workers/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(workerData)
+    const { id, ...workerData } = worker;
+    const response = await axios.put(`${API_URL}/workers/${id}`, workerData, {
+      headers: { 'Content-Type': 'application/json' }
     });
-    
-    if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+    if (response.status !== 200) {
+      throw new Error(`HTTP error ${response.status}`);
+    }
   } catch (error) {
     handleApiError(error, "Error updating worker");
     throw error;
@@ -64,27 +74,30 @@ export const updateWorkerInApi = async (worker: Worker): Promise<void> => {
 
 export const deleteWorkerFromApi = async (id: string): Promise<void> => {
   try {
-    const response = await fetch(`${API_URL}/workers/${id}`, {
-      method: 'DELETE'
-    });
-    
-    if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+    const response = await axios.delete(`${API_URL}/workers/${id}`);
+    if (response.status !== 200) {
+      throw new Error(`HTTP error ${response.status}`);
+    }
   } catch (error) {
     handleApiError(error, "Error deleting worker");
     throw error;
   }
 };
 
-// Attendance operations
+// =======================
+// Attendance Operations
+// =======================
+
 export const fetchAttendance = async (): Promise<AttendanceRecord[]> => {
   try {
-    const response = await fetch(`${API_URL}/attendance`);
-    if (!response.ok) throw new Error(`HTTP error ${response.status}`);
-    const attendance = await response.json();
+    const response = await axios.get(`${API_URL}/attendance`);
+    if (!response.data) throw new Error(`HTTP error ${response.status}`);
+    
+    const attendance = response.data;
     return attendance.map((record: any) => ({
       ...record,
       id: record._id, // Map MongoDB _id to our id field
-      workerId: record.workerId, // MongoDB already stores this as workerId
+      workerId: record.workerId,
     }));
   } catch (error) {
     handleApiError(error, "Error fetching attendance");
@@ -98,29 +111,32 @@ export const markAttendanceInApi = async (
   status: AttendanceStatus
 ): Promise<void> => {
   try {
-    const response = await fetch(`${API_URL}/attendance`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ workerId, date, status })
+    const response = await axios.post(`${API_URL}/attendance`, { workerId, date, status }, {
+      headers: { 'Content-Type': 'application/json' }
     });
-    
-    if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+    if (response.status !== 200 && response.status !== 201) {
+      throw new Error(`HTTP error ${response.status}`);
+    }
   } catch (error) {
     handleApiError(error, "Error marking attendance");
     throw error;
   }
 };
 
-// Payment operations
+// =======================
+// Payment Operations
+// =======================
+
 export const fetchPayments = async (): Promise<Payment[]> => {
   try {
-    const response = await fetch(`${API_URL}/payments`);
-    if (!response.ok) throw new Error(`HTTP error ${response.status}`);
-    const payments = await response.json();
+    const response = await axios.get(`${API_URL}/payments`);
+    if (!response.data) throw new Error(`HTTP error ${response.status}`);
+    
+    const payments = response.data;
     return payments.map((payment: any) => ({
       ...payment,
       id: payment._id, // Map MongoDB _id to our id field
-      workerId: payment.workerId, // MongoDB already stores this as workerId
+      workerId: payment.workerId,
     }));
   } catch (error) {
     handleApiError(error, "Error fetching payments");
@@ -130,15 +146,11 @@ export const fetchPayments = async (): Promise<Payment[]> => {
 
 export const addPaymentToApi = async (payment: Omit<Payment, "id">): Promise<string> => {
   try {
-    const response = await fetch(`${API_URL}/payments`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payment)
+    const response = await axios.post(`${API_URL}/payments`, payment, {
+      headers: { 'Content-Type': 'application/json' }
     });
-    
-    if (!response.ok) throw new Error(`HTTP error ${response.status}`);
-    const newPayment = await response.json();
-    return newPayment._id; // Return the MongoDB _id
+    if (!response.data) throw new Error(`HTTP error ${response.status}`);
+    return response.data._id; // Return the MongoDB _id
   } catch (error) {
     handleApiError(error, "Error adding payment");
     throw error;
@@ -147,18 +159,20 @@ export const addPaymentToApi = async (payment: Omit<Payment, "id">): Promise<str
 
 export const deletePaymentFromApi = async (id: string): Promise<void> => {
   try {
-    const response = await fetch(`${API_URL}/payments/${id}`, {
-      method: 'DELETE'
-    });
-    
-    if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+    const response = await axios.delete(`${API_URL}/payments/${id}`);
+    if (response.status !== 200) {
+      throw new Error(`HTTP error ${response.status}`);
+    }
   } catch (error) {
     handleApiError(error, "Error deleting payment");
     throw error;
   }
 };
 
-// Helper function for initial data seeding
+// =======================
+// Seed Initial Data
+// =======================
+
 export const seedInitialData = async (
   workers: Worker[],
   attendance: AttendanceRecord[],
@@ -167,7 +181,6 @@ export const seedInitialData = async (
   try {
     // Check if data already exists
     const existingWorkers = await fetchWorkers();
-    
     if (existingWorkers.length === 0) {
       // Add workers without IDs
       for (const worker of workers) {
@@ -175,11 +188,11 @@ export const seedInitialData = async (
         await addWorkerToApi(workerData);
       }
       
-      // Get newly created workers to use their IDs
+      // Retrieve newly created workers to map their IDs
       const newWorkers = await fetchWorkers();
-      const workerIdMap = new Map();
+      const workerIdMap = new Map<string, string>();
       
-      // Map old IDs to new IDs
+      // Map old IDs to new IDs based on matching names
       workers.forEach((oldWorker) => {
         const newWorker = newWorkers.find(w => w.name === oldWorker.name);
         if (newWorker) {
@@ -200,10 +213,7 @@ export const seedInitialData = async (
         const newWorkerId = workerIdMap.get(payment.workerId);
         if (newWorkerId) {
           const { id, ...paymentData } = payment;
-          await addPaymentToApi({
-            ...paymentData,
-            workerId: newWorkerId
-          });
+          await addPaymentToApi({ ...paymentData, workerId: newWorkerId });
         }
       }
       
