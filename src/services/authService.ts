@@ -1,6 +1,17 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:5001/api';
+// Dynamic API URL - works for both localhost and production
+const getApiUrl = () => {
+  if (process.env.NODE_ENV === 'production') {
+    return 'https://fabtracko-backend-1075356604683.asia-south1.run.app/api';
+  }
+  
+  const hostname = window.location.hostname;
+  const port = '5001';
+  return `http://${hostname}:${port}/api`;
+};
+
+const API_URL = getApiUrl();
 const TOKEN_KEY = 'auth_token';
 
 // Initialize auth headers with stored token if any

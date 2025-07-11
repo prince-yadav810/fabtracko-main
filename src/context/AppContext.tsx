@@ -69,57 +69,79 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [selectedWorker, setSelectedWorker] = useState<Worker | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isDataSeeded, setIsDataSeeded] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
+      console.log("🔄 Starting to load data...");
       setIsLoading(true);
+      
       try {
+        console.log("📡 Fetching workers...");
         const loadedWorkers = await fetchWorkers();
+        console.log("👥 Workers fetched:", loadedWorkers);
+        
+        console.log("📡 Fetching attendance...");
         const loadedAttendance = await fetchAttendance();
+        console.log("📋 Attendance fetched:", loadedAttendance);
+        
+        console.log("📡 Fetching payments...");
         const loadedPayments = await fetchPayments();
+        console.log("💰 Payments fetched:", loadedPayments);
 
-        if (loadedWorkers.length === 0 && !isDataSeeded) {
+        // Always set the data, even if empty
+        setWorkers(loadedWorkers);
+        setAttendanceRecords(loadedAttendance);
+        setPayments(loadedPayments);
+
+        // Only seed if no workers exist
+        if (loadedWorkers.length === 0) {
+          console.log("🌱 No workers found, seeding sample data...");
           await seedSampleData();
-          setIsDataSeeded(true);
         } else {
-          setWorkers(loadedWorkers);
-          setAttendanceRecords(loadedAttendance);
-          setPayments(loadedPayments);
+          console.log(`✅ Found ${loadedWorkers.length} workers, no seeding needed`);
         }
+        
       } catch (error) {
-        console.error("Error loading data:", error);
+        console.error("❌ Error loading data:", error);
+        
+        // More specific error handling
+        if (error instanceof Error) {
+          console.error("Error message:", error.message);
+          console.error("Error stack:", error.stack);
+        }
+        
         toast({
-          title: "Error",
-          description: "Failed to load data. Please try again later.",
+          title: "Error Loading Data",
+          description: `Failed to load data: ${error instanceof Error ? error.message : 'Unknown error'}`,
           variant: "destructive",
         });
       } finally {
         setIsLoading(false);
+        console.log("✅ Data loading completed");
       }
     };
 
     loadData();
-  }, [isDataSeeded]);
+  }, []);
 
   const seedSampleData = async () => {
     const sampleWorkers: Worker[] = [
       {
-        id: "1",
+        id: "temp1", // Using temp IDs that will be replaced by MongoDB IDs
         name: "Rajesh Kumar",
         joiningDate: "2023-01-15",
         dailyWage: 500,
         profilePicture: "https://randomuser.me/api/portraits/men/1.jpg",
       },
       {
-        id: "2",
-        name: "Sunil Verma",
+        id: "temp2",
+        name: "Sunil Verma", 
         joiningDate: "2023-02-10",
         dailyWage: 450,
         profilePicture: "https://randomuser.me/api/portraits/men/2.jpg",
       },
       {
-        id: "3",
+        id: "temp3",
         name: "Amit Singh",
         joiningDate: "2023-03-05",
         dailyWage: 550,
@@ -135,88 +157,59 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
 
     const sampleAttendance: AttendanceRecord[] = [
       {
-        id: "a1",
-        workerId: "1",
+        id: "tempa1",
+        workerId: "temp1",
         date: today.toISOString().split('T')[0],
         status: "present"
       },
       {
-        id: "a2",
-        workerId: "2",
+        id: "tempa2",
+        workerId: "temp2",
         date: today.toISOString().split('T')[0],
         status: "absent"
       },
       {
-        id: "a3",
-        workerId: "3",
+        id: "tempa3",
+        workerId: "temp3",
         date: today.toISOString().split('T')[0],
         status: "halfday"
-      },
-      {
-        id: "a4",
-        workerId: "1",
-        date: yesterday.toISOString().split('T')[0],
-        status: "present"
-      },
-      {
-        id: "a5",
-        workerId: "2",
-        date: yesterday.toISOString().split('T')[0],
-        status: "present"
-      },
-      {
-        id: "a6",
-        workerId: "3",
-        date: yesterday.toISOString().split('T')[0],
-        status: "overtime"
-      },
-      {
-        id: "a7",
-        workerId: "1",
-        date: dayBefore.toISOString().split('T')[0],
-        status: "present"
-      },
-      {
-        id: "a8",
-        workerId: "2",
-        date: dayBefore.toISOString().split('T')[0],
-        status: "present"
-      },
-      {
-        id: "a9",
-        workerId: "3",
-        date: dayBefore.toISOString().split('T')[0],
-        status: "present"
       },
     ];
 
     const samplePayments: Payment[] = [
       {
-        id: "p1",
-        workerId: "1",
+        id: "tempp1",
+        workerId: "temp1",
         date: yesterday.toISOString().split('T')[0],
         amount: 1000,
         type: "advance"
       },
-      {
-        id: "p2",
-        workerId: "3",
-        date: yesterday.toISOString().split('T')[0],
-        amount: 500,
-        type: "overtime"
-      },
     ];
 
     try {
+      console.log("🌱 Seeding initial data...");
       await seedInitialData(sampleWorkers, sampleAttendance, samplePayments);
-      setWorkers(sampleWorkers);
-      setAttendanceRecords(sampleAttendance);
-      setPayments(samplePayments);
-    } catch (error) {
-      console.error("Error seeding sample data:", error);
+      
+      // After seeding, reload the data from API
+      console.log("🔄 Reloading data after seeding...");
+      const newWorkers = await fetchWorkers();
+      const newAttendance = await fetchAttendance();
+      const newPayments = await fetchPayments();
+      
+      setWorkers(newWorkers);
+      setAttendanceRecords(newAttendance);
+      setPayments(newPayments);
+      
+      console.log("✅ Sample data seeded and reloaded successfully");
       toast({
-        title: "Error",
-        description: "Failed to initialize sample data.",
+        title: "Welcome!",
+        description: "Sample data has been created for you to get started.",
+      });
+    } catch (error) {
+      console.error("❌ Error seeding sample data:", error);
+      toast({
+        title: "Warning",
+        description: "Failed to create sample data, but you can still add workers manually.",
         variant: "destructive",
       });
     }
@@ -224,15 +217,24 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
 
   const addWorker = async (worker: Omit<Worker, "id">): Promise<string> => {
     try {
+      console.log("➕ Adding worker:", worker);
       const newWorkerId = await addWorkerToApi(worker);
+      console.log("✅ Worker added with ID:", newWorkerId);
+      
       const newWorker: Worker = {
         ...worker,
         id: newWorkerId,
       };
       setWorkers((prev) => [...prev, newWorker]);
+      
+      toast({
+        title: "Success",
+        description: `Worker ${worker.name} added successfully!`,
+      });
+      
       return newWorkerId;
     } catch (error) {
-      console.error("Error adding worker:", error);
+      console.error("❌ Error adding worker:", error);
       toast({
         title: "Error",
         description: "Failed to add worker.",
@@ -248,6 +250,11 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
       setWorkers((prev) => 
         prev.map((worker) => (worker.id === updatedWorker.id ? updatedWorker : worker))
       );
+      
+      toast({
+        title: "Success",
+        description: `Worker ${updatedWorker.name} updated successfully!`,
+      });
     } catch (error) {
       console.error("Error updating worker:", error);
       toast({
@@ -267,6 +274,11 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
         prev.filter((record) => record.workerId !== id)
       );
       setPayments((prev) => prev.filter((payment) => payment.workerId !== id));
+      
+      toast({
+        title: "Success",
+        description: "Worker deleted successfully!",
+      });
     } catch (error) {
       console.error("Error deleting worker:", error);
       toast({
@@ -305,6 +317,11 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
         const updatedRecords = await fetchAttendance();
         setAttendanceRecords(updatedRecords);
       }
+      
+      toast({
+        title: "Success",
+        description: "Attendance marked successfully!",
+      });
     } catch (error) {
       console.error("Error marking attendance:", error);
       toast({
@@ -324,6 +341,11 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
         id: newPaymentId,
       };
       setPayments((prev) => [...prev, newPayment]);
+      
+      toast({
+        title: "Success",
+        description: "Payment added successfully!",
+      });
     } catch (error) {
       console.error("Error adding payment:", error);
       toast({
@@ -339,6 +361,11 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     try {
       await deletePaymentFromApi(id);
       setPayments((prev) => prev.filter((payment) => payment.id !== id));
+      
+      toast({
+        title: "Success",
+        description: "Payment deleted successfully!",
+      });
     } catch (error) {
       console.error("Error deleting payment:", error);
       toast({

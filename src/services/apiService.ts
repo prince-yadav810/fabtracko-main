@@ -2,10 +2,18 @@ import axios from 'axios';
 import { Worker, AttendanceRecord, Payment, AttendanceStatus } from "../context/AppContext";
 import authService from '../services/authService';
 
-// Base API URL - configured based on environment
-const API_URL = process.env.NODE_ENV === 'production'
-  ? 'https://your-production-api.googlegcloud.app/api'
-  : 'http://localhost:5001/api';
+// Dynamic API URL - works for both localhost and network IP
+const getApiUrl = () => {
+  if (process.env.NODE_ENV === 'production') {
+    return 'https://fabtracko-backend-1075356604683.asia-south1.run.app/api';
+  }
+  
+  const hostname = window.location.hostname;
+  const port = '5001';
+  return `http://${hostname}:${port}/api`;
+};
+
+const API_URL = getApiUrl();
 
 // Setup request interceptor to always include the latest token
 axios.interceptors.request.use((config) => {
