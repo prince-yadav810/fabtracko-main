@@ -1,5 +1,5 @@
+# Update the backend workflow file
 name: Deploy Backend to Cloud Run
-
 on:
   push:
     branches: [ main ]
@@ -11,14 +11,15 @@ jobs:
     
     steps:
     - name: Checkout code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
-    - name: Setup Google Cloud CLI
-      uses: google-github-actions/setup-gcloud@v1
+    - name: Authenticate to Google Cloud
+      uses: google-github-actions/auth@v1
       with:
-        project_id: fabtracko
-        service_account_key: ${{ secrets.GCP_SA_KEY }}
-        export_default_credentials: true
+        credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+    - name: Set up Cloud SDK
+      uses: google-github-actions/setup-gcloud@v1
 
     - name: Configure Docker to use gcloud
       run: gcloud auth configure-docker
@@ -33,3 +34,4 @@ jobs:
           --update-env-vars="NODE_ENV=production" \
           --update-env-vars="JWT_SECRET=${{ secrets.JWT_SECRET }}" \
           --update-env-vars="MONGODB_URI=${{ secrets.MONGODB_URI }}"
+
