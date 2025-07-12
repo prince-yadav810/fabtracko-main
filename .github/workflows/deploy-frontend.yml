@@ -1,4 +1,4 @@
-# Create the fixed frontend workflow
+# Create a new frontend workflow that builds the container
 name: Deploy Frontend to Cloud Run
 
 on:
@@ -23,21 +23,20 @@ jobs:
     - name: Set up Cloud SDK
       uses: google-github-actions/setup-gcloud@v2
 
-    - name: Activate Service Account
-      run: |
-        gcloud auth activate-service-account --key-file=$GOOGLE_APPLICATION_CREDENTIALS
-        gcloud config set project fabtracko
-
     - name: Configure Docker to use gcloud
       run: gcloud auth configure-docker
+
+    - name: Build and Push Docker Image
+      run: |
+        docker build -t gcr.io/fabtracko/fabtracko-frontend:${{ github.sha }} .
+        docker push gcr.io/fabtracko/fabtracko-frontend:${{ github.sha }}
 
     - name: Deploy to Cloud Run
       run: |
         gcloud run deploy fabtracko-frontend \
-          --source . \
+          --image gcr.io/fabtracko/fabtracko-frontend:${{ github.sha }} \
           --region asia-south1 \
           --allow-unauthenticated \
           --port 8080
-
 
 
